@@ -235,7 +235,7 @@ const StudyTracker = () => {
               </div>
             ))}
 
-            <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-2 border-dashed border-blue-300">
+            <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-2 border-dashed border-blue-300 flex items-center justify-center">
               <div className="text-center">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Plus size={24} className="text-blue-500" />
