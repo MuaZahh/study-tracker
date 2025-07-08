@@ -330,9 +330,15 @@ const StudyTracker = () => {
                   <span className={`flex-1 ${chapter.topicalsCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
                     {chapter.name}
                   </span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 mr-2">
                     {chapter.topicalsCompleted ? 'Completed' : 'Pending'}
                   </span>
+                  <button
+                    onClick={() => deleteChapter(chapter.id)}
+                    className="text-red-500 hover:text-red-700 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               ))}
               
