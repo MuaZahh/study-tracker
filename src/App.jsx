@@ -102,6 +102,19 @@ const StudyTracker = () => {
     });
   };
 
+  const deleteChapter = (chapterId) => {
+    setSubjects(subjects.map(subject => 
+      subject.id === selectedSubject.id 
+        ? { ...subject, chapters: subject.chapters.filter(c => c.id !== chapterId) }
+        : subject
+    ));
+    
+    setSelectedSubject({
+      ...selectedSubject,
+      chapters: selectedSubject.chapters.filter(c => c.id !== chapterId)
+    });
+  };
+   
   const addPastPaper = () => {
     if (selectedSubject && newPaper.score !== '') {
       const paper = {
