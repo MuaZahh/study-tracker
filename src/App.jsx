@@ -225,6 +225,24 @@ const StudyTracker = () => {
     return overdueRevisions;
   };
 
+  // Delete study session
+  const deleteStudySession = (sessionId) => {
+    const updatedSubjects = subjects.map(subject => 
+      subject.id === selectedSubject.id 
+        ? { 
+            ...subject, 
+            studySessions: subject.studySessions.filter(session => session.id !== sessionId)
+          }
+        : subject
+    );
+
+    setSubjects(updatedSubjects);
+    setSelectedSubject({
+      ...selectedSubject,
+      studySessions: selectedSubject.studySessions.filter(session => session.id !== sessionId)
+    });
+  };
+
   // Calendar helper functions
   const getDaysInMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -730,7 +748,7 @@ const StudyTracker = () => {
                     </div>
                   ))}
                   
-                  {getRevisionsForToday().length === 0 && (
+                  {getRevisionsForToday().length === 0 && getOverdueRevisions().length === 0 && (
                     <div className="text-center py-4 text-gray-500">
                       <CheckCircle size={48} className="mx-auto mb-2 opacity-50 text-green-500" />
                       <p>No revisions due today!</p>
@@ -740,7 +758,7 @@ const StudyTracker = () => {
               </div>
 
               {/* Add Study Session */}
-              <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Add Study Session</h3>
                 <select
                   value={newChapterName}
@@ -769,6 +787,33 @@ const StudyTracker = () => {
                 >
                   Add Study Session
                 </button>
+              </div>
+
+              {/* Study Sessions List */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Study Sessions</h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {selectedSubject.studySessions && selectedSubject.studySessions.length > 0 ? (
+                    selectedSubject.studySessions.map(session => (
+                      <div key={session.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div>
+                          <p className="font-medium text-sm">{session.chapterName}</p>
+                          <p className="text-xs text-gray-600">
+                            Studied: {new Date(session.studyDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => deleteStudySession(session.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm text-center">No study sessions yet</p>
+                  )}
+                </div>
               </div>
             </div>
 
