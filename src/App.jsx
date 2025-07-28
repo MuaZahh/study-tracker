@@ -58,51 +58,6 @@ const StudyTracker = () => {
     });
   };
 
-  // Add maintenance revision (every 30 days after the initial cycle)
-  const addMaintenanceRevision = (sessionId) => {
-    const updatedSubjects = subjects.map(subject => {
-      if (subject.id === selectedSubject.id) {
-        const updatedSessions = subject.studySessions.map(session => {
-          if (session.id === sessionId) {
-            // Get the last revision date
-            const lastRevision = session.revisions[session.revisions.length - 1];
-            const lastDate = new Date(lastRevision.date);
-            
-            // Calculate next maintenance date (30 days from last revision)
-            const maintenanceDate = new Date(lastDate);
-            maintenanceDate.setDate(maintenanceDate.getDate() + 30);
-            
-            // Create new maintenance revision
-            const newRevision = {
-              id: `rev-${session.revisions.length}`,
-              date: maintenanceDate.toISOString().split('T')[0],
-              cycle: 'Maintenance (30 days)',
-              completed: false
-            };
-            
-            return {
-              ...session,
-              revisions: [...session.revisions, newRevision]
-            };
-          }
-          return session;
-        });
-        
-        return {
-          ...subject,
-          studySessions: updatedSessions
-        };
-      }
-      return subject;
-    });
-
-    setSubjects(updatedSubjects);
-    
-    // Update selected subject state
-    const updatedSelectedSubject = updatedSubjects.find(s => s.id === selectedSubject.id);
-    setSelectedSubject(updatedSelectedSubject);
-  };
-
   // Add study session to calendar
   const addStudySession = (chapterName, date) => {
     if (!selectedSubject || !chapterName) return;
@@ -133,6 +88,10 @@ const StudyTracker = () => {
 
   // Mark revision as completed
   const toggleRevisionComplete = (sessionId, revisionIndex) => {
+    // First, find the current session to check its state
+    const currentSession = selectedSubject.studySessions.find(s => s.id === sessionId);
+    const isCompleting = currentSession && !currentSession.revisions[revisionIndex].completed;
+    
     const updatedSubjects = subjects.map(subject => 
       subject.id === selectedSubject.id 
         ? {
@@ -155,7 +114,8 @@ const StudyTracker = () => {
     );
 
     setSubjects(updatedSubjects);
-    setSelectedSubject({
+    
+    const updatedSelectedSubject = {
       ...selectedSubject,
       studySessions: selectedSubject.studySessions.map(session =>
         session.id === sessionId
@@ -170,13 +130,48 @@ const StudyTracker = () => {
             }
           : session
       )
-    });
+    };
+    
+    setSelectedSubject(updatedSelectedSubject);
 
-    // Check if this was the last scheduled revision and add maintenance revision
-    const session = selectedSubject.studySessions.find(s => s.id === sessionId);
-    if (session && revisionIndex === session.revisions.length - 1 && !session.revisions[revisionIndex].completed) {
-      // Add a new maintenance revision 30 days from this one
-      setTimeout(() => addMaintenanceRevision(sessionId), 100);
+    // Check if we're completing the last revision and need to add maintenance
+    if (isCompleting && currentSession && revisionIndex === currentSession.revisions.length - 1) {
+      // Add a new maintenance revision 30 days from this revision's date
+      const lastRevisionDate = new Date(currentSession.revisions[revisionIndex].date);
+      const maintenanceDate = new Date(lastRevisionDate);
+      maintenanceDate.setDate(maintenanceDate.getDate() + 30);
+      
+      const newRevision = {
+        id: `rev-${currentSession.revisions.length}`,
+        date: maintenanceDate.toISOString().split('T')[0],
+        cycle: 'Maintenance (30 days)',
+        completed: false
+      };
+      
+      // Update again with the new maintenance revision
+      const finalUpdatedSubjects = subjects.map(subject => {
+        if (subject.id === selectedSubject.id) {
+          return {
+            ...subject,
+            studySessions: subject.studySessions.map(session => {
+              if (session.id === sessionId) {
+                return {
+                  ...session,
+                  revisions: [...session.revisions, newRevision]
+                };
+              }
+              return session;
+            })
+          };
+        }
+        return subject;
+      });
+      
+      setSubjects(finalUpdatedSubjects);
+      
+      // Update selected subject with new maintenance revision
+      const finalSelectedSubject = finalUpdatedSubjects.find(s => s.id === selectedSubject.id);
+      setSelectedSubject(finalSelectedSubject);
     }
   };
 
