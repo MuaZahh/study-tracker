@@ -751,7 +751,7 @@ const StudyTracker = () => {
                   {getRevisionsForToday().length === 0 && getOverdueRevisions().length === 0 && (
                     <div className="text-center py-4 text-gray-500">
                       <CheckCircle size={48} className="mx-auto mb-2 opacity-50 text-green-500" />
-                      <p>No revisions due today!</p>
+                      <p>Nothing to revise today!</p>
                     </div>
                   )}
                 </div>
