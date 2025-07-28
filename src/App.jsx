@@ -184,13 +184,14 @@ const StudyTracker = () => {
 
     selectedSubject.studySessions.forEach(session => {
       session.revisions.forEach((revision, index) => {
-        if (revision.date === today && !revision.completed) {
+        if (revision.date === today) {
           revisions.push({
             sessionId: session.id,
             chapterName: session.chapterName,
             studyDate: session.studyDate,
             revisionIndex: index,
-            cycle: revision.cycle
+            cycle: revision.cycle,
+            completed: revision.completed
           });
         }
       });
@@ -697,20 +698,33 @@ const StudyTracker = () => {
 
                 <div className="space-y-3">
                   {getRevisionsForToday().map(revision => (
-                    <div key={`${revision.sessionId}-${revision.revisionIndex}`} className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <div key={`${revision.sessionId}-${revision.revisionIndex}`} 
+                         className={`p-3 rounded-lg border ${
+                           revision.completed 
+                             ? 'bg-green-50 border-green-200' 
+                             : 'bg-yellow-50 border-yellow-200'
+                         }`}>
                       <div className="flex items-start justify-between">
                         <div>
                           <h4 className="font-medium text-gray-800">{revision.chapterName}</h4>
                           <p className="text-sm text-gray-600 mt-1">
                             Original study date: {new Date(revision.studyDate).toLocaleDateString()}
                           </p>
-                          <p className="text-sm font-medium text-yellow-700 mt-1">{revision.cycle} revision</p>
+                          <p className={`text-sm font-medium mt-1 ${
+                            revision.completed ? 'text-green-700' : 'text-yellow-700'
+                          }`}>
+                            {revision.cycle} revision {revision.completed ? '✓ Completed' : ''}
+                          </p>
                         </div>
                         <button
                           onClick={() => toggleRevisionComplete(revision.sessionId, revision.revisionIndex)}
-                          className="text-green-600 hover:text-green-700 transition-colors"
+                          className={`transition-colors ${
+                            revision.completed 
+                              ? 'text-gray-500 hover:text-gray-700' 
+                              : 'text-green-600 hover:text-green-700'
+                          }`}
                         >
-                          <Check size={20} />
+                          {revision.completed ? <Circle size={20} /> : <Check size={20} />}
                         </button>
                       </div>
                     </div>
