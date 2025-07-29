@@ -720,7 +720,7 @@ const StudyTracker = () => {
                          className={`p-3 rounded-lg border ${
                            revision.completed 
                              ? 'bg-green-50 border-green-200' 
-                             : 'bg-yellow-50 border-yellow-200'
+                             : 'bg-gray-50 border-gray-300'
                          }`}>
                       <div className="flex items-start justify-between">
                         <div>
@@ -729,20 +729,20 @@ const StudyTracker = () => {
                             Original study date: {new Date(revision.studyDate).toLocaleDateString()}
                           </p>
                           <p className={`text-sm font-medium mt-1 ${
-                            revision.completed ? 'text-green-700' : 'text-yellow-700'
+                            revision.completed ? 'text-green-700' : 'text-gray-700'
                           }`}>
-                            {revision.cycle} revision {revision.completed ? '✓ Completed' : ''}
+                            {revision.cycle} revision
                           </p>
                         </div>
                         <button
                           onClick={() => toggleRevisionComplete(revision.sessionId, revision.revisionIndex)}
-                          className={`transition-colors ${
+                          className={`transition-colors p-1 rounded ${
                             revision.completed 
-                              ? 'text-gray-500 hover:text-gray-700' 
-                              : 'text-green-600 hover:text-green-700'
+                              ? 'text-green-600 hover:text-green-700' 
+                              : 'text-gray-400 hover:text-gray-600'
                           }`}
                         >
-                          {revision.completed ? <Circle size={20} /> : <Check size={20} />}
+                          {revision.completed ? <CheckCircle size={24} /> : <Circle size={24} />}
                         </button>
                       </div>
                     </div>
@@ -751,7 +751,7 @@ const StudyTracker = () => {
                   {getRevisionsForToday().length === 0 && getOverdueRevisions().length === 0 && (
                     <div className="text-center py-4 text-gray-500">
                       <CheckCircle size={48} className="mx-auto mb-2 opacity-50 text-green-500" />
-                      <p>Nothing to revise today!</p>
+                      <p>No revisions due today!</p>
                     </div>
                   )}
                 </div>
@@ -853,12 +853,20 @@ const StudyTracker = () => {
                     <span>Study Session</span>
                   </div>
                   <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                    <span>Due Today</span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <span>Upcoming Revision</span>
+                    <span>Upcoming</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                     <span>Overdue</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-white ring-2 ring-green-500"></div>
+                    <span>Completed</span>
                   </div>
                 </div>
 
@@ -878,6 +886,10 @@ const StudyTracker = () => {
                                    currentMonth.getMonth() === new Date().getMonth() &&
                                    currentMonth.getFullYear() === new Date().getFullYear();
                     
+                    // Create date string for this calendar day
+                    const dateStr = day ? `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}` : null;
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    
                     return (
                       <div
                         key={index}
@@ -891,28 +903,36 @@ const StudyTracker = () => {
                               {day}
                             </div>
                             
-                            {/* Study sessions */}
-                            {events.studies.map(study => (
-                              <div key={study.id} className="w-2 h-2 bg-green-500 rounded-full inline-block mr-1 mb-1"></div>
-                            ))}
-                            
-                            {/* Revisions */}
-                            {events.revisions.map(revision => {
-                              const today = new Date().toISOString().split('T')[0];
-                              const isOverdue = revision.date < today && !revision.completed;
-                              const isCompleted = revision.completed;
+                            <div className="flex flex-wrap gap-1">
+                              {/* Study sessions - always green */}
+                              {events.studies.map(study => (
+                                <div key={study.id} className="w-2 h-2 bg-green-500 rounded-full" title={`Studied: ${study.chapterName}`}></div>
+                              ))}
                               
-                              return (
-                                <div
-                                  key={`${revision.sessionId}-${revision.revisionIndex}`}
-                                  className={`w-2 h-2 rounded-full inline-block mr-1 mb-1 ${
-                                    isCompleted ? 'bg-gray-400' :
-                                    isOverdue ? 'bg-red-500' : 'bg-yellow-500'
-                                  }`}
-                                  title={`${revision.chapterName} - ${revision.cycle}`}
-                                ></div>
-                              );
-                            })}
+                              {/* Revisions */}
+                              {events.revisions.map(revision => {
+                                const isOverdue = dateStr < todayStr && !revision.completed;
+                                const isDueToday = dateStr === todayStr && !revision.completed;
+                                const isUpcoming = dateStr > todayStr && !revision.completed;
+                                const isCompleted = revision.completed;
+                                
+                                return (
+                                  <div
+                                    key={`${revision.sessionId}-${revision.revisionIndex}`}
+                                    className={`w-2 h-2 rounded-full ${
+                                      isCompleted 
+                                        ? 'bg-green-500 ring-1 ring-green-600' 
+                                        : isOverdue 
+                                          ? 'bg-red-500'
+                                          : isDueToday
+                                            ? 'bg-gray-400'
+                                            : 'bg-yellow-500'
+                                    }`}
+                                    title={`${revision.chapterName} - ${revision.cycle}${isCompleted ? ' (Completed)' : isOverdue ? ' (Overdue)' : isDueToday ? ' (Due Today)' : ' (Upcoming)'}`}
+                                  ></div>
+                                );
+                              })}
+                            </div>
                           </>
                         )}
                       </div>
