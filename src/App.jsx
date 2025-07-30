@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check } from 'lucide-react';
+import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check, X } from 'lucide-react';
 
 const StudyTracker = () => {
   const [subjects, setSubjects] = useState([]);
@@ -22,6 +22,7 @@ const StudyTracker = () => {
   const [calendarView, setCalendarView] = useState('chapters');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [showOverdueWarning, setShowOverdueWarning] = useState(true);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -35,6 +36,11 @@ const StudyTracker = () => {
   useEffect(() => {
     localStorage.setItem('studyTrackerSubjects', JSON.stringify(subjects));
   }, [subjects]);
+
+  // Reset overdue warning when switching subjects or views
+  useEffect(() => {
+    setShowOverdueWarning(true);
+  }, [selectedSubject, calendarView]);
 
   // Helper function to calculate revision dates
   const calculateRevisionDates = (studyDate) => {
@@ -700,11 +706,19 @@ const StudyTracker = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Today's Revisions</h2>
                 
-                {getOverdueRevisions().length > 0 && (
+                {getOverdueRevisions().length > 0 && showOverdueWarning && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                    <div className="flex items-center text-red-700 mb-2">
-                      <AlertCircle size={20} className="mr-2" />
-                      <span className="font-medium">Overdue Revisions</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center text-red-700">
+                        <AlertCircle size={20} className="mr-2" />
+                        <span className="font-medium">Overdue Revisions</span>
+                      </div>
+                      <button
+                        onClick={() => setShowOverdueWarning(false)}
+                        className="text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        <X size={18} />
+                      </button>
                     </div>
                     {getOverdueRevisions().map(revision => (
                       <div key={`${revision.sessionId}-${revision.revisionIndex}`} className="text-sm text-red-600 mb-1">
@@ -853,20 +867,12 @@ const StudyTracker = () => {
                     <span>Study Session</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                    <span>Due Today</span>
-                  </div>
-                  <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <span>Upcoming</span>
+                    <span>Upcoming Revision</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                     <span>Overdue</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full border-2 border-white ring-2 ring-green-500"></div>
-                    <span>Completed</span>
                   </div>
                 </div>
 
@@ -912,8 +918,6 @@ const StudyTracker = () => {
                               {/* Revisions */}
                               {events.revisions.map(revision => {
                                 const isOverdue = dateStr < todayStr && !revision.completed;
-                                const isDueToday = dateStr === todayStr && !revision.completed;
-                                const isUpcoming = dateStr > todayStr && !revision.completed;
                                 const isCompleted = revision.completed;
                                 
                                 return (
@@ -924,11 +928,9 @@ const StudyTracker = () => {
                                         ? 'bg-green-500 ring-1 ring-green-600' 
                                         : isOverdue 
                                           ? 'bg-red-500'
-                                          : isDueToday
-                                            ? 'bg-gray-400'
-                                            : 'bg-yellow-500'
+                                          : 'bg-yellow-500'
                                     }`}
-                                    title={`${revision.chapterName} - ${revision.cycle}${isCompleted ? ' (Completed)' : isOverdue ? ' (Overdue)' : isDueToday ? ' (Due Today)' : ' (Upcoming)'}`}
+                                    title={`${revision.chapterName} - ${revision.cycle}${isCompleted ? ' (Completed)' : isOverdue ? ' (Overdue)' : ' (Upcoming)'}`}
                                   ></div>
                                 );
                               })}
