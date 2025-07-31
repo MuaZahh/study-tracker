@@ -962,7 +962,14 @@ const StudyTracker = () => {
                 >
                   <option value="">Select a chapter</option>
                   {selectedSubject.chapters.map(chapter => (
-                    <option key={chapter.id} value={chapter.name}>{chapter.name}</option>
+                    <optgroup key={chapter.id} label={chapter.name}>
+                      <option value={chapter.name}>{chapter.name}</option>
+                      {chapter.subchapters && chapter.subchapters.map(sub => (
+                        <option key={sub.id} value={`${chapter.name} - ${sub.name}`}>
+                          └─ {sub.name}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 <input
