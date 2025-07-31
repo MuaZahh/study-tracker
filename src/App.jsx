@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check, X } from 'lucide-react';
 
 const StudyTracker = () => {
   const [subjects, setSubjects] = useState([]);
@@ -22,12 +22,7 @@ const StudyTracker = () => {
   const [calendarView, setCalendarView] = useState('chapters');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showAddSubchapter, setShowAddSubchapter] = useState(false);
-  const [newSubchapterName, setNewSubchapterName] = useState('');
-  const [selectedChapterForSubchapter, setSelectedChapterForSubchapter] = useState(null);
-  const [expandedChapters, setExpandedChapters] = useState({});
-  const [isAddingWithSubchapters, setIsAddingWithSubchapters] = useState(false);
-  const [subchaptersList, setSubchaptersList] = useState(['']);
+  const [showOverdueWarning, setShowOverdueWarning] = useState(true);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -339,14 +334,7 @@ const StudyTracker = () => {
       const newChapter = {
         id: Date.now(),
         name: newChapterName.trim(),
-        topicalsCompleted: false,
-        subchapters: isAddingWithSubchapters 
-          ? subchaptersList.filter(sub => sub.trim()).map((sub, index) => ({
-              id: Date.now() + index + 1,
-              name: sub.trim(),
-              topicalsCompleted: false
-            }))
-          : []
+        topicalsCompleted: false
       };
       
       setSubjects(subjects.map(subject => 
@@ -362,125 +350,7 @@ const StudyTracker = () => {
       
       setNewChapterName('');
       setShowAddChapter(false);
-      setIsAddingWithSubchapters(false);
-      setSubchaptersList(['']);
     }
-  };
-
-  const addSubchapter = (chapterId) => {
-    if (newSubchapterName.trim() && selectedSubject) {
-      const updatedSubjects = subjects.map(subject => 
-        subject.id === selectedSubject.id 
-          ? {
-              ...subject,
-              chapters: subject.chapters.map(chapter =>
-                chapter.id === chapterId
-                  ? {
-                      ...chapter,
-                      subchapters: [...(chapter.subchapters || []), {
-                        id: Date.now(),
-                        name: newSubchapterName.trim(),
-                        topicalsCompleted: false
-                      }]
-                    }
-                  : chapter
-              )
-            }
-          : subject
-      );
-      
-      setSubjects(updatedSubjects);
-      setSelectedSubject({
-        ...selectedSubject,
-        chapters: selectedSubject.chapters.map(chapter =>
-          chapter.id === chapterId
-            ? {
-                ...chapter,
-                subchapters: [...(chapter.subchapters || []), {
-                  id: Date.now(),
-                  name: newSubchapterName.trim(),
-                  topicalsCompleted: false
-                }]
-              }
-            : chapter
-        )
-      });
-      
-      setNewSubchapterName('');
-      setShowAddSubchapter(false);
-      setSelectedChapterForSubchapter(null);
-    }
-  };
-
-  const toggleSubchapterCompletion = (chapterId, subchapterId) => {
-    const updatedSubjects = subjects.map(subject => 
-      subject.id === selectedSubject.id 
-        ? {
-            ...subject,
-            chapters: subject.chapters.map(chapter =>
-              chapter.id === chapterId 
-                ? {
-                    ...chapter,
-                    subchapters: chapter.subchapters.map(sub =>
-                      sub.id === subchapterId
-                        ? { ...sub, topicalsCompleted: !sub.topicalsCompleted }
-                        : sub
-                    )
-                  }
-                : chapter
-            )
-          }
-        : subject
-    );
-    
-    setSubjects(updatedSubjects);
-    setSelectedSubject({
-      ...selectedSubject,
-      chapters: selectedSubject.chapters.map(chapter =>
-        chapter.id === chapterId 
-          ? {
-              ...chapter,
-              subchapters: chapter.subchapters.map(sub =>
-                sub.id === subchapterId
-                  ? { ...sub, topicalsCompleted: !sub.topicalsCompleted }
-                  : sub
-              )
-            }
-          : chapter
-      )
-    });
-  };
-
-  const deleteSubchapter = (chapterId, subchapterId) => {
-    const updatedSubjects = subjects.map(subject => 
-      subject.id === selectedSubject.id 
-        ? {
-            ...subject,
-            chapters: subject.chapters.map(chapter =>
-              chapter.id === chapterId
-                ? { ...chapter, subchapters: chapter.subchapters.filter(sub => sub.id !== subchapterId) }
-                : chapter
-            )
-          }
-        : subject
-    );
-    
-    setSubjects(updatedSubjects);
-    setSelectedSubject({
-      ...selectedSubject,
-      chapters: selectedSubject.chapters.map(chapter =>
-        chapter.id === chapterId
-          ? { ...chapter, subchapters: chapter.subchapters.filter(sub => sub.id !== subchapterId) }
-          : chapter
-      )
-    });
-  };
-
-  const toggleChapterExpanded = (chapterId) => {
-    setExpandedChapters(prev => ({
-      ...prev,
-      [chapterId]: !prev[chapterId]
-    }));
   };
 
   const toggleChapterCompletion = (chapterId) => {
@@ -748,79 +618,28 @@ const StudyTracker = () => {
 
               <div className="space-y-3">
                 {selectedSubject.chapters.map(chapter => (
-                  <div key={chapter.id}>
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      {chapter.subchapters && chapter.subchapters.length > 0 && (
-                        <button
-                          onClick={() => toggleChapterExpanded(chapter.id)}
-                          className="text-gray-500 hover:text-gray-700 transition-colors"
-                        >
-                          {expandedChapters[chapter.id] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => toggleChapterCompletion(chapter.id)}
-                        className="text-blue-500 hover:text-blue-700 transition-colors"
-                      >
-                        {chapter.topicalsCompleted ? 
-                          <CheckCircle size={20} className="text-green-500" /> : 
-                          <Circle size={20} />
-                        }
-                      </button>
-                      <span className={`flex-1 ${chapter.topicalsCompleted ? 'line-through text-gray-500' : 'text-gray-800'} ${chapter.subchapters && chapter.subchapters.length > 0 ? 'font-medium' : ''}`}>
-                        {chapter.name}
-                      </span>
-                      <span className="text-sm text-gray-500 mr-2">
-                        {chapter.topicalsCompleted ? 'Completed' : 'Pending'}
-                      </span>
-                      <button
-                        onClick={() => {
-                          setSelectedChapterForSubchapter(chapter.id);
-                          setShowAddSubchapter(true);
-                        }}
-                        className="text-blue-500 hover:text-blue-700 transition-colors"
-                        title="Add subchapter"
-                      >
-                        <Plus size={16} />
-                      </button>
-                      <button
-                        onClick={() => deleteChapter(chapter.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    
-                    {/* Subchapters */}
-                    {expandedChapters[chapter.id] && chapter.subchapters && chapter.subchapters.length > 0 && (
-                      <div className="ml-8 mt-2 space-y-2">
-                        {chapter.subchapters.map(subchapter => (
-                          <div key={subchapter.id} className="flex items-center gap-3 p-2 bg-gray-100 rounded-lg">
-                            <button
-                              onClick={() => toggleSubchapterCompletion(chapter.id, subchapter.id)}
-                              className="text-blue-500 hover:text-blue-700 transition-colors"
-                            >
-                              {subchapter.topicalsCompleted ? 
-                                <CheckCircle size={16} className="text-green-500" /> : 
-                                <Circle size={16} />
-                              }
-                            </button>
-                            <span className={`flex-1 text-sm ${subchapter.topicalsCompleted ? 'line-through text-gray-500' : 'text-gray-700'}`}>
-                              {subchapter.name}
-                            </span>
-                            <span className="text-xs text-gray-500 mr-2">
-                              {subchapter.topicalsCompleted ? 'Completed' : 'Pending'}
-                            </span>
-                            <button
-                              onClick={() => deleteSubchapter(chapter.id, subchapter.id)}
-                              className="text-red-500 hover:text-red-700 transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div key={chapter.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <button
+                      onClick={() => toggleChapterCompletion(chapter.id)}
+                      className="text-blue-500 hover:text-blue-700 transition-colors"
+                    >
+                      {chapter.topicalsCompleted ? 
+                        <CheckCircle size={20} className="text-green-500" /> : 
+                        <Circle size={20} />
+                      }
+                    </button>
+                    <span className={`flex-1 ${chapter.topicalsCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                      {chapter.name}
+                    </span>
+                    <span className="text-sm text-gray-500 mr-2">
+                      {chapter.topicalsCompleted ? 'Completed' : 'Pending'}
+                    </span>
+                    <button
+                      onClick={() => deleteChapter(chapter.id)}
+                      className="text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))}
                 
@@ -962,14 +781,7 @@ const StudyTracker = () => {
                 >
                   <option value="">Select a chapter</option>
                   {selectedSubject.chapters.map(chapter => (
-                    <optgroup key={chapter.id} label={chapter.name}>
-                      <option value={chapter.name}>{chapter.name}</option>
-                      {chapter.subchapters && chapter.subchapters.map(sub => (
-                        <option key={sub.id} value={`${chapter.name} - ${sub.name}`}>
-                          └─ {sub.name}
-                        </option>
-                      ))}
-                    </optgroup>
+                    <option key={chapter.id} value={chapter.name}>{chapter.name}</option>
                   ))}
                 </select>
                 <input
@@ -1137,7 +949,7 @@ const StudyTracker = () => {
         {/* Add Chapter Modal */}
         {showAddChapter && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
               <h3 className="text-xl font-semibold mb-4">Add New Chapter</h3>
               <input
                 type="text"
@@ -1145,63 +957,8 @@ const StudyTracker = () => {
                 value={newChapterName}
                 onChange={(e) => setNewChapterName(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyPress={(e) => e.key === 'Enter' && addChapter()}
               />
-              
-              <div className="mb-4">
-                <label className="flex items-center gap-2 text-sm text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={isAddingWithSubchapters}
-                    onChange={(e) => {
-                      setIsAddingWithSubchapters(e.target.checked);
-                      if (!e.target.checked) {
-                        setSubchaptersList(['']);
-                      }
-                    }}
-                    className="rounded text-blue-500"
-                  />
-                  Add subchapters
-                </label>
-              </div>
-              
-              {isAddingWithSubchapters && (
-                <div className="mb-4 space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Subchapters:</label>
-                  {subchaptersList.map((subchapter, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder={`Subchapter ${index + 1}`}
-                        value={subchapter}
-                        onChange={(e) => {
-                          const newList = [...subchaptersList];
-                          newList[index] = e.target.value;
-                          setSubchaptersList(newList);
-                        }}
-                        className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      {subchaptersList.length > 1 && (
-                        <button
-                          onClick={() => {
-                            setSubchaptersList(subchaptersList.filter((_, i) => i !== index));
-                          }}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => setSubchaptersList([...subchaptersList, ''])}
-                    className="text-blue-500 hover:text-blue-700 text-sm flex items-center gap-1"
-                  >
-                    <Plus size={16} />
-                    Add another subchapter
-                  </button>
-                </div>
-              )}
-              
               <div className="flex gap-3">
                 <button
                   onClick={addChapter}
@@ -1213,43 +970,6 @@ const StudyTracker = () => {
                   onClick={() => {
                     setShowAddChapter(false);
                     setNewChapterName('');
-                    setIsAddingWithSubchapters(false);
-                    setSubchaptersList(['']);
-                  }}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add Subchapter Modal */}
-        {showAddSubchapter && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-              <h3 className="text-xl font-semibold mb-4">Add New Subchapter</h3>
-              <input
-                type="text"
-                placeholder="Subchapter name"
-                value={newSubchapterName}
-                onChange={(e) => setNewSubchapterName(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onKeyPress={(e) => e.key === 'Enter' && addSubchapter(selectedChapterForSubchapter)}
-              />
-              <div className="flex gap-3">
-                <button
-                  onClick={() => addSubchapter(selectedChapterForSubchapter)}
-                  className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Add Subchapter
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAddSubchapter(false);
-                    setNewSubchapterName('');
-                    setSelectedChapterForSubchapter(null);
                   }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
                 >
