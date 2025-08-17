@@ -22,7 +22,7 @@ const StudyTracker = () => {
   const [calendarView, setCalendarView] = useState('chapters');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [dismissedOverdueWarnings, setDismissedOverdueWarnings] = useState({});
+  const [dismissedRevisions, setDismissedRevisions] = useState(new Set());
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -31,9 +31,9 @@ const StudyTracker = () => {
       setSubjects(JSON.parse(savedSubjects));
     }
     
-    const savedDismissedWarnings = localStorage.getItem('studyTrackerDismissedWarnings');
-    if (savedDismissedWarnings) {
-      setDismissedOverdueWarnings(JSON.parse(savedDismissedWarnings));
+    const savedDismissedRevisions = localStorage.getItem('studyTrackerDismissedRevisions');
+    if (savedDismissedRevisions) {
+      setDismissedRevisions(new Set(JSON.parse(savedDismissedRevisions)));
     }
   }, []);
 
@@ -42,31 +42,41 @@ const StudyTracker = () => {
     localStorage.setItem('studyTrackerSubjects', JSON.stringify(subjects));
   }, [subjects]);
 
-  // Save dismissed warnings to localStorage
+  // Save dismissed revisions to localStorage
   useEffect(() => {
-    localStorage.setItem('studyTrackerDismissedWarnings', JSON.stringify(dismissedOverdueWarnings));
-  }, [dismissedOverdueWarnings]);
+    localStorage.setItem('studyTrackerDismissedRevisions', JSON.stringify(Array.from(dismissedRevisions)));
+  }, [dismissedRevisions]);
 
-  // Helper function to dismiss overdue warning permanently
+  // Helper function to dismiss current overdue warnings permanently
   const dismissOverdueWarning = () => {
     if (!selectedSubject) return;
     
-    const subjectKey = `subject_${selectedSubject.id}`;
-    setDismissedOverdueWarnings(prev => ({
-      ...prev,
-      [subjectKey]: true
-    }));
+    // Get all currently overdue revisions and mark them as dismissed
+    const currentOverdueRevisions = getOverdueRevisions();
+    const newDismissedRevisions = new Set(dismissedRevisions);
+    
+    currentOverdueRevisions.forEach(revision => {
+      const revisionId = `${revision.sessionId}-${revision.revisionIndex}`;
+      newDismissedRevisions.add(revisionId);
+    });
+    
+    setDismissedRevisions(newDismissedRevisions);
+  };
+
+  // Get overdue revisions that haven't been dismissed
+  const getNonDismissedOverdueRevisions = () => {
+    if (!selectedSubject || !selectedSubject.studySessions) return [];
+    
+    const allOverdueRevisions = getOverdueRevisions();
+    return allOverdueRevisions.filter(revision => {
+      const revisionId = `${revision.sessionId}-${revision.revisionIndex}`;
+      return !dismissedRevisions.has(revisionId);
+    });
   };
 
   // Check if overdue warning should be shown for current subject
   const shouldShowOverdueWarning = () => {
-    if (!selectedSubject) return false;
-    
-    const subjectKey = `subject_${selectedSubject.id}`;
-    const isDismissed = dismissedOverdueWarnings[subjectKey] || false;
-    const hasOverdueRevisions = getOverdueRevisions().length > 0;
-    
-    return hasOverdueRevisions && !isDismissed;
+    return getNonDismissedOverdueRevisions().length > 0;
   };
 
   // Helper function to calculate revision dates
@@ -747,7 +757,7 @@ const StudyTracker = () => {
                         <X size={18} />
                       </button>
                     </div>
-                    {getOverdueRevisions().map(revision => (
+                    {getNonDismissedOverdueRevisions().map(revision => (
                       <div key={`${revision.sessionId}-${revision.revisionIndex}`} className="text-sm text-red-600 mb-1">
                         {revision.chapterName} - {revision.cycle} (Due: {new Date(revision.dueDate).toLocaleDateString()})
                       </div>
