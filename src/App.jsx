@@ -22,13 +22,18 @@ const StudyTracker = () => {
   const [calendarView, setCalendarView] = useState('chapters');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showOverdueWarning, setShowOverdueWarning] = useState(true);
+  const [dismissedOverdueWarnings, setDismissedOverdueWarnings] = useState({});
 
   // Load data from localStorage on component mount
   useEffect(() => {
     const savedSubjects = localStorage.getItem('studyTrackerSubjects');
     if (savedSubjects) {
       setSubjects(JSON.parse(savedSubjects));
+    }
+    
+    const savedDismissedWarnings = localStorage.getItem('studyTrackerDismissedWarnings');
+    if (savedDismissedWarnings) {
+      setDismissedOverdueWarnings(JSON.parse(savedDismissedWarnings));
     }
   }, []);
 
@@ -37,10 +42,32 @@ const StudyTracker = () => {
     localStorage.setItem('studyTrackerSubjects', JSON.stringify(subjects));
   }, [subjects]);
 
-  // Reset overdue warning when switching subjects or views
+  // Save dismissed warnings to localStorage
   useEffect(() => {
-    setShowOverdueWarning(true);
-  }, [selectedSubject, calendarView]);
+    localStorage.setItem('studyTrackerDismissedWarnings', JSON.stringify(dismissedOverdueWarnings));
+  }, [dismissedOverdueWarnings]);
+
+  // Helper function to dismiss overdue warning permanently
+  const dismissOverdueWarning = () => {
+    if (!selectedSubject) return;
+    
+    const subjectKey = `subject_${selectedSubject.id}`;
+    setDismissedOverdueWarnings(prev => ({
+      ...prev,
+      [subjectKey]: true
+    }));
+  };
+
+  // Check if overdue warning should be shown for current subject
+  const shouldShowOverdueWarning = () => {
+    if (!selectedSubject) return false;
+    
+    const subjectKey = `subject_${selectedSubject.id}`;
+    const isDismissed = dismissedOverdueWarnings[subjectKey] || false;
+    const hasOverdueRevisions = getOverdueRevisions().length > 0;
+    
+    return hasOverdueRevisions && !isDismissed;
+  };
 
   // Helper function to calculate revision dates
   const calculateRevisionDates = (studyDate) => {
@@ -706,7 +733,7 @@ const StudyTracker = () => {
               <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Today's Revisions</h2>
                 
-                {getOverdueRevisions().length > 0 && showOverdueWarning && (
+                {shouldShowOverdueWarning() && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center text-red-700">
@@ -714,7 +741,7 @@ const StudyTracker = () => {
                         <span className="font-medium">Overdue Revisions</span>
                       </div>
                       <button
-                        onClick={() => setShowOverdueWarning(false)}
+                        onClick={dismissOverdueWarning}
                         className="text-red-400 hover:text-red-600 transition-colors"
                       >
                         <X size={18} />
@@ -762,7 +789,7 @@ const StudyTracker = () => {
                     </div>
                   ))}
                   
-                  {getRevisionsForToday().length === 0 && getOverdueRevisions().length === 0 && (
+                  {getRevisionsForToday().length === 0 && !shouldShowOverdueWarning() && (
                     <div className="text-center py-4 text-gray-500">
                       <CheckCircle size={48} className="mx-auto mb-2 opacity-50 text-green-500" />
                       <p>No revisions due today!</p>
