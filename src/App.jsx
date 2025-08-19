@@ -1,5 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check, X } from 'lucide-react';
+import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check, X, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import {
+  CSS
+} from '@dnd-kit/utilities';
 
 const StudyTracker = () => {
   const [subjects, setSubjects] = useState([]);
@@ -343,6 +361,59 @@ const StudyTracker = () => {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
                       'July', 'August', 'September', 'October', 'November', 'December'];
 
+  // Sortable chapter component
+  const SortableChapter = ({ chapter }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+    } = useSortable({ id: chapter.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+    };
+
+    return (
+      <div 
+        ref={setNodeRef} 
+        style={style} 
+        className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+      >
+        <div 
+          {...attributes} 
+          {...listeners} 
+          className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
+        >
+          <GripVertical size={16} />
+        </div>
+        <button
+          onClick={() => toggleChapterCompletion(chapter.id)}
+          className="text-blue-500 hover:text-blue-700 transition-colors"
+        >
+          {chapter.topicalsCompleted ? 
+            <CheckCircle size={20} className="text-green-500" /> : 
+            <Circle size={20} />
+          }
+        </button>
+        <span className={`flex-1 ${chapter.topicalsCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+          {chapter.name}
+        </span>
+        <span className="text-sm text-gray-500 mr-2">
+          {chapter.topicalsCompleted ? 'Completed' : 'Pending'}
+        </span>
+        <button
+          onClick={() => deleteChapter(chapter.id)}
+          className="text-red-500 hover:text-red-700 transition-colors"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    );
+  };
+
   const addSubject = () => {
     if (newSubjectName.trim()) {
       const newSubject = {
@@ -427,6 +498,36 @@ const StudyTracker = () => {
       chapters: selectedSubject.chapters.filter(c => c.id !== chapterId)
     });
   };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      const oldIndex = selectedSubject.chapters.findIndex(chapter => chapter.id === active.id);
+      const newIndex = selectedSubject.chapters.findIndex(chapter => chapter.id === over.id);
+      
+      const newChapters = arrayMove(selectedSubject.chapters, oldIndex, newIndex);
+      
+      const updatedSubjects = subjects.map(subject => 
+        subject.id === selectedSubject.id 
+          ? { ...subject, chapters: newChapters }
+          : subject
+      );
+      
+      setSubjects(updatedSubjects);
+      setSelectedSubject({
+        ...selectedSubject,
+        chapters: newChapters
+      });
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
    
   const addPastPaper = () => {
     if (selectedSubject && newPaper.score !== '') {
@@ -653,40 +754,29 @@ const StudyTracker = () => {
                 </button>
               </div>
 
-              <div className="space-y-3">
-                {selectedSubject.chapters.map(chapter => (
-                  <div key={chapter.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <button
-                      onClick={() => toggleChapterCompletion(chapter.id)}
-                      className="text-blue-500 hover:text-blue-700 transition-colors"
-                    >
-                      {chapter.topicalsCompleted ? 
-                        <CheckCircle size={20} className="text-green-500" /> : 
-                        <Circle size={20} />
-                      }
-                    </button>
-                    <span className={`flex-1 ${chapter.topicalsCompleted ? 'line-through text-gray-500' : 'text-gray-800'}`}>
-                      {chapter.name}
-                    </span>
-                    <span className="text-sm text-gray-500 mr-2">
-                      {chapter.topicalsCompleted ? 'Completed' : 'Pending'}
-                    </span>
-                    <button
-                      onClick={() => deleteChapter(chapter.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
-                
-                {selectedSubject.chapters.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <BookOpen size={48} className="mx-auto mb-2 opacity-50" />
-                    <p>No chapters added yet</p>
-                  </div>
-                )}
-              </div>
+              {selectedSubject.chapters.length > 0 ? (
+                <DndContext 
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext 
+                    items={selectedSubject.chapters.map(chapter => chapter.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-3">
+                      {selectedSubject.chapters.map(chapter => (
+                        <SortableChapter key={chapter.id} chapter={chapter} />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <BookOpen size={48} className="mx-auto mb-2 opacity-50" />
+                  <p>No chapters added yet</p>
+                </div>
+              )}
             </div>
 
             {/* Past Papers Section */}
@@ -845,7 +935,26 @@ const StudyTracker = () => {
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Study Sessions</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {selectedSubject.studySessions && selectedSubject.studySessions.length > 0 ? (
-                    selectedSubject.studySessions.map(session => (
+                    selectedSubject.studySessions
+                      .sort((a, b) => {
+                        // Get the earliest upcoming revision for each session
+                        const getEarliestUpcomingRevision = (session) => {
+                          const today = new Date().toISOString().split('T')[0];
+                          const upcomingRevisions = session.revisions.filter(rev => !rev.completed && rev.date >= today);
+                          if (upcomingRevisions.length === 0) {
+                            // If no upcoming revisions, get the earliest overdue revision
+                            const overdueRevisions = session.revisions.filter(rev => !rev.completed && rev.date < today);
+                            return overdueRevisions.length > 0 ? overdueRevisions[0].date : '9999-12-31';
+                          }
+                          return upcomingRevisions[0].date;
+                        };
+                        
+                        const aEarliestDate = getEarliestUpcomingRevision(a);
+                        const bEarliestDate = getEarliestUpcomingRevision(b);
+                        
+                        return aEarliestDate.localeCompare(bEarliestDate);
+                      })
+                      .map(session => (
                       <div key={session.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                         <div>
                           <p className="font-medium text-sm">{session.chapterName}</p>
