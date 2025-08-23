@@ -587,6 +587,35 @@ const StudyTracker = () => {
     return Math.round(total / subject.pastPapers.length);
   };
 
+  // Get revision status for a subject
+  const getSubjectRevisionStatus = (subject) => {
+    if (!subject.studySessions || subject.studySessions.length === 0) {
+      return { hasDueRevisions: false, overdueCount: 0, todayCount: 0 };
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    let overdueCount = 0;
+    let todayCount = 0;
+
+    subject.studySessions.forEach(session => {
+      session.revisions.forEach(revision => {
+        if (!revision.completed) {
+          if (revision.date < today) {
+            overdueCount++;
+          } else if (revision.date === today) {
+            todayCount++;
+          }
+        }
+      });
+    });
+
+    return {
+      hasDueRevisions: overdueCount > 0 || todayCount > 0,
+      overdueCount,
+      todayCount
+    };
+  };
+
   if (currentView === 'subjects') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -597,17 +626,41 @@ const StudyTracker = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {subjects.map(subject => (
-              <div key={subject.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 border-blue-500">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800">{subject.name}</h3>
-                  <button
-                    onClick={() => deleteSubject(subject.id)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
+            {subjects.map(subject => {
+              const revisionStatus = getSubjectRevisionStatus(subject);
+              
+              return (
+                <div key={subject.id} className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 ${
+                  revisionStatus.overdueCount > 0 ? 'border-red-500' : 
+                  revisionStatus.todayCount > 0 ? 'border-yellow-500' : 'border-blue-500'
+                }`}>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xl font-semibold text-gray-800">{subject.name}</h3>
+                      {revisionStatus.hasDueRevisions && (
+                        <div className="flex items-center gap-1">
+                          {revisionStatus.overdueCount > 0 && (
+                            <div className="flex items-center bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
+                              <AlertCircle size={12} className="mr-1" />
+                              {revisionStatus.overdueCount} overdue
+                            </div>
+                          )}
+                          {revisionStatus.todayCount > 0 && (
+                            <div className="flex items-center bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
+                              <Calendar size={12} className="mr-1" />
+                              {revisionStatus.todayCount} due today
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => deleteSubject(subject.id)}
+                      className="text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center text-sm text-gray-600">
@@ -647,7 +700,8 @@ const StudyTracker = () => {
                   View Details
                 </button>
               </div>
-            ))}
+              );
+            })}
 
             <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-2 border-dashed border-blue-300 flex items-center justify-center">
               <div className="text-center">
