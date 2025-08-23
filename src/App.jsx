@@ -590,28 +590,22 @@ const StudyTracker = () => {
   // Get revision status for a subject
   const getSubjectRevisionStatus = (subject) => {
     if (!subject.studySessions || subject.studySessions.length === 0) {
-      return { hasDueRevisions: false, overdueCount: 0, todayCount: 0 };
+      return { hasDueRevisions: false, todayCount: 0 };
     }
 
     const today = new Date().toISOString().split('T')[0];
-    let overdueCount = 0;
     let todayCount = 0;
 
     subject.studySessions.forEach(session => {
       session.revisions.forEach(revision => {
-        if (!revision.completed) {
-          if (revision.date < today) {
-            overdueCount++;
-          } else if (revision.date === today) {
-            todayCount++;
-          }
+        if (!revision.completed && revision.date === today) {
+          todayCount++;
         }
       });
     });
 
     return {
-      hasDueRevisions: overdueCount > 0 || todayCount > 0,
-      overdueCount,
+      hasDueRevisions: todayCount > 0,
       todayCount
     };
   };
@@ -631,26 +625,15 @@ const StudyTracker = () => {
               
               return (
                 <div key={subject.id} className={`bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 ${
-                  revisionStatus.overdueCount > 0 ? 'border-red-500' : 
                   revisionStatus.todayCount > 0 ? 'border-yellow-500' : 'border-blue-500'
                 }`}>
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl font-semibold text-gray-800">{subject.name}</h3>
                       {revisionStatus.hasDueRevisions && (
-                        <div className="flex items-center gap-1">
-                          {revisionStatus.overdueCount > 0 && (
-                            <div className="flex items-center bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-                              <AlertCircle size={12} className="mr-1" />
-                              {revisionStatus.overdueCount} overdue
-                            </div>
-                          )}
-                          {revisionStatus.todayCount > 0 && (
-                            <div className="flex items-center bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
-                              <Calendar size={12} className="mr-1" />
-                              {revisionStatus.todayCount} due today
-                            </div>
-                          )}
+                        <div className="flex items-center bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
+                          <Calendar size={12} className="mr-1" />
+                          {revisionStatus.todayCount} due today
                         </div>
                       )}
                     </div>
