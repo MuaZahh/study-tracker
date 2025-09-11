@@ -41,6 +41,8 @@ const StudyTracker = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [dismissedRevisions, setDismissedRevisions] = useState(new Set());
+  const [showDayEditModal, setShowDayEditModal] = useState(false);
+  const [selectedDayData, setSelectedDayData] = useState(null);
 
   // Load data from localStorage on component mount
   useEffect(() => {
@@ -147,6 +149,21 @@ const StudyTracker = () => {
     });
   };
 
+  // Handle clicking on a calendar day
+  const handleDayClick = (day) => {
+    if (!day) return;
+    
+    const dateStr = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const events = getEventsForDate(day);
+    
+    setSelectedDayData({
+      date: dateStr,
+      dayNumber: day,
+      ...events
+    });
+    setShowDayEditModal(true);
+  };
+
   // Mark revision as completed
   const toggleRevisionComplete = (sessionId, revisionIndex) => {
     // First, find the current session to check its state
@@ -194,6 +211,14 @@ const StudyTracker = () => {
     };
     
     setSelectedSubject(updatedSelectedSubject);
+
+    // If completing a revision, remove it from dismissed revisions
+    if (isCompleting) {
+      const revisionId = `${sessionId}-${revisionIndex}`;
+      const newDismissedRevisions = new Set(dismissedRevisions);
+      newDismissedRevisions.delete(revisionId);
+      setDismissedRevisions(newDismissedRevisions);
+    }
 
     // Check if we're completing the last revision and need to add maintenance
     if (isCompleting && currentSession && revisionIndex === currentSession.revisions.length - 1) {
@@ -1082,6 +1107,7 @@ const StudyTracker = () => {
                     return (
                       <div
                         key={index}
+                        onClick={() => handleDayClick(day)}
                         className={`min-h-[80px] p-2 border rounded-lg ${
                           day ? 'hover:bg-gray-50 cursor-pointer' : ''
                         } ${isToday ? 'bg-blue-50 border-blue-300' : 'border-gray-200'}`}
@@ -1252,6 +1278,118 @@ const StudyTracker = () => {
                   className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Day Edit Modal */}
+        {showDayEditModal && selectedDayData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-lg mx-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">
+                  Edit Day - {new Date(selectedDayData.date).toLocaleDateString()}
+                </h3>
+                <button
+                  onClick={() => setShowDayEditModal(false)}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Study Sessions */}
+              {selectedDayData.studies.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-lg font-medium text-gray-800 mb-3">Study Sessions</h4>
+                  <div className="space-y-2">
+                    {selectedDayData.studies.map(study => (
+                      <div key={study.id} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-green-800">{study.chapterName}</span>
+                          <span className="text-sm text-green-600">Study Session</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Revisions */}
+              {selectedDayData.revisions.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-lg font-medium text-gray-800 mb-3">Revisions</h4>
+                  <div className="space-y-3">
+                    {selectedDayData.revisions.map(revision => {
+                      const dateStr = selectedDayData.date;
+                      const todayStr = new Date().toISOString().split('T')[0];
+                      const isOverdue = dateStr < todayStr && !revision.completed;
+                      
+                      return (
+                        <div 
+                          key={`${revision.sessionId}-${revision.revisionIndex}`}
+                          className={`p-3 border rounded-lg ${
+                            revision.completed 
+                              ? 'bg-green-50 border-green-200' 
+                              : isOverdue 
+                                ? 'bg-red-50 border-red-200'
+                                : 'bg-yellow-50 border-yellow-200'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-gray-800">{revision.chapterName}</h5>
+                              <p className="text-sm text-gray-600 mt-1">{revision.cycle}</p>
+                              {isOverdue && !revision.completed && (
+                                <p className="text-sm text-red-600 font-medium mt-1">Overdue</p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => {
+                                toggleRevisionComplete(revision.sessionId, revision.revisionIndex);
+                                // Update the modal data to reflect the change
+                                const updatedRevisions = selectedDayData.revisions.map(rev => 
+                                  rev.sessionId === revision.sessionId && rev.revisionIndex === revision.revisionIndex
+                                    ? { ...rev, completed: !rev.completed }
+                                    : rev
+                                );
+                                setSelectedDayData({
+                                  ...selectedDayData,
+                                  revisions: updatedRevisions
+                                });
+                              }}
+                              className={`transition-colors p-1 rounded ${
+                                revision.completed 
+                                  ? 'text-green-600 hover:text-green-700' 
+                                  : 'text-gray-400 hover:text-gray-600'
+                              }`}
+                            >
+                              {revision.completed ? <CheckCircle size={24} /> : <Circle size={24} />}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* No events message */}
+              {selectedDayData.studies.length === 0 && selectedDayData.revisions.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar size={48} className="mx-auto mb-2 opacity-50" />
+                  <p>No study sessions or revisions for this day</p>
+                </div>
+              )}
+
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => setShowDayEditModal(false)}
+                  className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Done
                 </button>
               </div>
             </div>
