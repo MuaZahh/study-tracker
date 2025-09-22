@@ -18,6 +18,7 @@ import {
 import {
   CSS
 } from '@dnd-kit/utilities';
+import { saveSubjects, saveDismissedRevisions, loadUserData } from './services/firebaseService';
 
 const StudyTracker = () => {
   const [subjects, setSubjects] = useState([]);
@@ -44,27 +45,51 @@ const StudyTracker = () => {
   const [showDayEditModal, setShowDayEditModal] = useState(false);
   const [selectedDayData, setSelectedDayData] = useState(null);
 
-  // Load data from localStorage on component mount
+  // Load data from Firebase on component mount
   useEffect(() => {
-    const savedSubjects = localStorage.getItem('studyTrackerSubjects');
-    if (savedSubjects) {
-      setSubjects(JSON.parse(savedSubjects));
-    }
-    
-    const savedDismissedRevisions = localStorage.getItem('studyTrackerDismissedRevisions');
-    if (savedDismissedRevisions) {
-      setDismissedRevisions(new Set(JSON.parse(savedDismissedRevisions)));
-    }
+    const loadData = async () => {
+      try {
+        const userData = await loadUserData();
+        setSubjects(userData.subjects);
+        setDismissedRevisions(userData.dismissedRevisions);
+      } catch (error) {
+        console.error('Failed to load data from Firebase:', error);
+        // Fallback to localStorage if Firebase fails
+        const savedSubjects = localStorage.getItem('studyTrackerSubjects');
+        if (savedSubjects) {
+          setSubjects(JSON.parse(savedSubjects));
+        }
+
+        const savedDismissedRevisions = localStorage.getItem('studyTrackerDismissedRevisions');
+        if (savedDismissedRevisions) {
+          setDismissedRevisions(new Set(JSON.parse(savedDismissedRevisions)));
+        }
+      }
+    };
+
+    loadData();
   }, []);
 
-  // Save data to localStorage whenever subjects change
+  // Save data to Firebase whenever subjects change
   useEffect(() => {
-    localStorage.setItem('studyTrackerSubjects', JSON.stringify(subjects));
+    if (subjects.length > 0) {
+      saveSubjects(subjects).catch(error => {
+        console.error('Failed to save subjects to Firebase:', error);
+        // Fallback to localStorage
+        localStorage.setItem('studyTrackerSubjects', JSON.stringify(subjects));
+      });
+    }
   }, [subjects]);
 
-  // Save dismissed revisions to localStorage
+  // Save dismissed revisions to Firebase
   useEffect(() => {
-    localStorage.setItem('studyTrackerDismissedRevisions', JSON.stringify(Array.from(dismissedRevisions)));
+    if (dismissedRevisions.size > 0) {
+      saveDismissedRevisions(dismissedRevisions).catch(error => {
+        console.error('Failed to save dismissed revisions to Firebase:', error);
+        // Fallback to localStorage
+        localStorage.setItem('studyTrackerDismissedRevisions', JSON.stringify(Array.from(dismissedRevisions)));
+      });
+    }
   }, [dismissedRevisions]);
 
   // Helper function to dismiss current overdue warnings permanently
