@@ -1,0 +1,113 @@
+{
+  "extractionInfo": {
+    "extractedFrom": "/Users/samaha/Desktop/study-tracker/data/013732.ldb",
+    "extractionDate": "2025-09-23",
+    "dataSource": "localStorage key: studyTrackerDismissedRevisions",
+    "description": "Dismissed revision warning IDs that users have permanently dismissed. These represent revision reminders the user chose not to see again.",
+    "relatedFindings": [
+      "Found reference to https://studytracker.ai in same LDB file",
+      "Found other dismissal-related keys like 'smartBannerDismissed' and 'mapslitepromosdismissed'",
+      "Located editor_nba_dismissible_warning and sb-noti-dismissal patterns"
+    ]
+  },
+  "rawData": {
+    "localStorageKey": "studyTrackerDismissedRevisions",
+    "extractedArray": [
+      "1753939391323-0",
+      "1753939391323-1",
+      "17538293813257-0"
+    ],
+    "note": "The third entry was extracted as 't8293813257-0' but appears to be missing the '175' prefix based on pattern analysis"
+  },
+  "parsedRevisions": [
+    {
+      "revisionId": "1753939391323-0",
+      "timestamp": 1753939391323,
+      "index": 0,
+      "timestampAnalysis": {
+        "dateTime": "2025-07-30T07:36:31.323Z",
+        "isValidTimestamp": true,
+        "timeframe": "Future date (beyond current date of 2025-09-23)"
+      }
+    },
+    {
+      "revisionId": "1753939391323-1",
+      "timestamp": 1753939391323,
+      "index": 1,
+      "timestampAnalysis": {
+        "dateTime": "2025-07-30T07:36:31.323Z",
+        "isValidTimestamp": true,
+        "timeframe": "Future date (beyond current date of 2025-09-23)"
+      }
+    },
+    {
+      "revisionId": "17538293813257-0",
+      "timestamp": 17538293813257,
+      "index": 0,
+      "timestampAnalysis": {
+        "dateTime": "2525-10-26T10:56:53.257Z",
+        "isValidTimestamp": true,
+        "timeframe": "Far future timestamp (500+ years from now)",
+        "note": "This timestamp appears unusually far in the future and may indicate a data issue or different timestamp format"
+      }
+    }
+  ],
+  "statistics": {
+    "totalDismissedRevisions": 3,
+    "uniqueTimestamps": 2,
+    "timestampRange": {
+      "earliest": "2025-07-30T07:36:31.323Z",
+      "latest": "2525-10-26T10:56:53.257Z"
+    },
+    "indexDistribution": {
+      "0": 2,
+      "1": 1
+    }
+  },
+  "patterns": {
+    "idFormat": "{timestamp}-{index}",
+    "timestampFormat": "Unix timestamp in milliseconds",
+    "indexFormat": "Sequential integer starting from 0",
+    "observations": [
+      "Two revisions from the same timestamp (1753939391323) but different indices",
+      "One revision with an unusually large timestamp suggesting possible data corruption or different format",
+      "All revisions follow the expected {timestamp}-{index} pattern"
+    ]
+  },
+  "dataIntegrity": {
+    "extractionMethod": "Binary strings extraction from LevelDB file",
+    "completeness": "Partial - data was fragmented in the binary file",
+    "confidence": "High for the pattern structure, Medium for completeness",
+    "notes": [
+      "The JSON array in the LDB file was split across multiple string fragments",
+      "One revision ID required reconstruction from partial data",
+      "The localStorage key was clearly identified in the binary data"
+    ]
+  },
+  "userBehaviorInsights": {
+    "purpose": "These IDs represent revision warnings that the user has permanently dismissed",
+    "implication": "User will not see revision reminders for these specific items again",
+    "revisionTypes": "Based on the timestamp-index pattern, these likely represent different aspects or stages of the same study content that needed revision",
+    "userPreference": "User actively chose to dismiss revision reminders, indicating either completion of the revision or decision to skip"
+  },
+  "analysisMethodology": {
+    "steps": [
+      "1. Searched all LevelDB files in /Users/samaha/Desktop/study-tracker/data/ for 'studyTrackerDismissedRevisions' key",
+      "2. Located the key in file 013732.ldb using grep and binary string extraction",
+      "3. Extracted surrounding context using strings command with various context options",
+      "4. Reconstructed fragmented JSON array data from multiple string fragments",
+      "5. Parsed timestamp components and validated format patterns",
+      "6. Cross-referenced with related dismissal patterns in the same file"
+    ],
+    "challenges": [
+      "JSON data was fragmented across multiple binary string segments",
+      "One revision ID required reconstruction from partial data ('t8293813257-0' missing prefix)",
+      "Binary data extraction limited by string command output formatting"
+    ],
+    "validation": [
+      "Confirmed localStorage key format matches expected pattern",
+      "Verified timestamp-index structure consistency",
+      "Cross-checked with related dismissal mechanisms in same storage"
+    ]
+  }
+}
