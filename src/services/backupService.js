@@ -369,6 +369,9 @@ export const cleanupOldBackups = async (keepCount = 10) => {
   }
 };
 
+// Track ongoing daily backup creation to prevent race conditions
+let dailyBackupInProgress = null;
+
 /**
  * Create an automatic daily backup if one doesn't exist for today
  * @param {Object} userData - Current user data
@@ -377,7 +380,13 @@ export const cleanupOldBackups = async (keepCount = 10) => {
 export const createDailyBackupIfNeeded = async (userData) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const recentBackups = await getBackupHistory(5);
+
+    // If a daily backup is already in progress for today, wait for it to complete
+    if (dailyBackupInProgress && dailyBackupInProgress.date === today) {
+      return await dailyBackupInProgress.promise;
+    }
+
+    const recentBackups = await getBackupHistory(10); // Check more backups to be sure
 
     // Check if we already have a daily backup for today
     const todayBackup = recentBackups.find(backup =>
@@ -388,13 +397,31 @@ export const createDailyBackupIfNeeded = async (userData) => {
       return null; // Daily backup already exists for today
     }
 
-    return await createBackup(userData, {
+    // Create a promise to track the daily backup creation
+    const backupPromise = createBackup(userData, {
       type: 'daily',
       action: 'daily-snapshot',
       description: `Daily backup for ${today}`
+    }).finally(() => {
+      // Clear the in-progress tracker when done
+      if (dailyBackupInProgress && dailyBackupInProgress.date === today) {
+        dailyBackupInProgress = null;
+      }
     });
+
+    // Track this backup creation to prevent concurrent duplicates
+    dailyBackupInProgress = {
+      date: today,
+      promise: backupPromise
+    };
+
+    return await backupPromise;
   } catch (error) {
     console.error('Error creating daily backup:', error);
+    // Clear the in-progress tracker on error
+    if (dailyBackupInProgress) {
+      dailyBackupInProgress = null;
+    }
     throw error;
   }
 };
