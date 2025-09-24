@@ -1,0 +1,148 @@
+{
+  "extraction_metadata": {
+    "extraction_date": "2025-09-23",
+    "source": "LevelDB files from /Users/samaha/Desktop/study-tracker/data/",
+    "method": "Deep search through binary LDB files using strings command",
+    "files_searched": [
+      "009867.ldb",
+      "009868.ldb",
+      "009869.ldb",
+      "009870.ldb",
+      "009871.ldb",
+      "013729.log",
+      "013731.ldb",
+      "013732.ldb",
+      "013733.ldb"
+    ]
+  },
+  "computer_science_data": {
+    "subject_name": "Computer Science",
+    "subject_variations_found": [
+      "Computer Science",
+      "COMPUTER_SCIENCE",
+      "CS",
+      "COMP",
+      "CompSci",
+      "IGCSE COMP"
+    ],
+    "direct_references": [
+      {
+        "type": "subject_mention",
+        "content": "Remember Computer Science? @elysianmyst.i",
+        "source_file": "009867.ldb",
+        "context": "Found near other academic content references"
+      },
+      {
+        "type": "curriculum_reference",
+        "content": "IGCSE COMP",
+        "source_file": "009867.ldb",
+        "context": "Associated with exam/curriculum content"
+      },
+      {
+        "type": "academic_content",
+        "content": "All important CS diagrams",
+        "source_file": "009867.ldb",
+        "context": "Study materials reference"
+      },
+      {
+        "type": "exam_reference",
+        "content": "Paper 1 igcs",
+        "source_file": "009867.ldb",
+        "context": "IGCSE examination paper reference"
+      },
+      {
+        "type": "curriculum_document",
+        "content": "Cambridge CS Syllabus Outl",
+        "source_file": "009867.ldb",
+        "context": "Official syllabus document reference"
+      },
+      {
+        "type": "revision_material",
+        "content": "PHCS PAPER 2 revision",
+        "source_file": "009867.ldb",
+        "context": "Physics/Computer Science combined revision material"
+      }
+    ],
+    "external_resources": [
+      {
+        "type": "educational_website",
+        "content": "isaaccomputerscience.org",
+        "source_file": "013731.ldb",
+        "context": "Educational platform for computer science learning"
+      }
+    ],
+    "document_ids_found": [
+      {
+        "id": "BPAiL8GXhuSfe9Cfa3N-hF9jfpnov67MQNNVaPXuz58",
+        "associated_content": "IGCSE COMP",
+        "type": "potential_chapter_or_document_id"
+      },
+      {
+        "id": "589kyFnd1T6eM9DE0GHh50UPDzNFfEedRdM668QrQOA",
+        "associated_content": "All important CS diagrams",
+        "type": "potential_chapter_or_document_id"
+      },
+      {
+        "id": "zOmSfoMM7lRw02YAVUYch3nhVnwdhtQWnJ2pDpEkZiY",
+        "associated_content": "Paper 1 igcs",
+        "type": "potential_exam_paper_id"
+      }
+    ],
+    "chapters": {
+      "note": "No structured chapter data found in accessible format",
+      "inferred_topics": [
+        "CS Diagrams",
+        "IGCSE Computer Science Curriculum",
+        "Cambridge CS Syllabus",
+        "Paper 1 and Paper 2 exam content"
+      ]
+    },
+    "study_sessions": {
+      "note": "No explicit study session data found",
+      "inferred_sessions": [
+        {
+          "type": "revision",
+          "content": "PHCS PAPER 2 revision",
+          "subject_combination": "Physics and Computer Science"
+        }
+      ]
+    },
+    "past_papers": {
+      "found_references": [
+        {
+          "type": "IGCSE",
+          "paper": "Paper 1",
+          "subject": "Computer Science",
+          "document_id": "zOmSfoMM7lRw02YAVUYch3nhVnwdhtQWnJ2pDpEkZiY"
+        },
+        {
+          "type": "IGCSE/Physics combination",
+          "paper": "Paper 2",
+          "subject": "PHCS (Physics/Computer Science)",
+          "content": "PHCS PAPER 2 revision"
+        }
+      ]
+    },
+    "curriculum_references": [
+      {
+        "exam_board": "Cambridge",
+        "qualification": "IGCSE",
+        "subject": "Computer Science",
+        "documents": [
+          "Cambridge CS Syllabus Outline",
+          "IGCSE COMP curriculum content"
+        ]
+      }
+    ],
+    "extraction_limitations": {
+      "data_format": "Binary LevelDB format limits complete data extraction",
+      "structure_accessibility": "Full JSON structures not directly accessible",
+      "completion_status": "Cannot determine chapter completion status from available data",
+      "detailed_content": "Chapter names and detailed content not fully extractable"
+    },
+    "recommendations": {
+      "data_recovery": "Consider using LevelDB tools or application-specific export features for complete data extraction",
+      "alternative_sources": "Check application UI or export features for structured data access"
+    }
+  }
+}

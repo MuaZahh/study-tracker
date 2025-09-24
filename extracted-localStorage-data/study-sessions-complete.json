@@ -1,0 +1,248 @@
+{
+  "extraction_metadata": {
+    "extraction_date": "2025-09-23",
+    "source_description": "Comprehensive extraction of study sessions, calendar data, and revision schedules from LevelDB files",
+    "domains_analyzed": [
+      "study-tracker-1mn0i23i6-muaadhzaheem130-5046s-projects.vercel.app",
+      "study-tracker-dcrtq9n1k-muaadhzaheem130-5046s-projects.vercel.app",
+      "study-tracker-rose.vercel.app",
+      "https://studytracker.ai"
+    ],
+    "user_email": "muaadhzaheem130@gmail.com",
+    "extraction_method": "LevelDB strings extraction and pattern matching"
+  },
+
+  "authentication_sessions": {
+    "main_session": {
+      "session_id": "session-live-41b91690-300a-4600-b252-cd0f720da546",
+      "user_id": "user",
+      "started_at": "2025-07-25T03:39:45Z",
+      "last_accessed_at": "2025-07-26T03:21:37Z",
+      "expires_at": "2025-08-24T03:39:45Z",
+      "authentication_method": "oauth_google",
+      "provider_subject": "117626163786341158994",
+      "last_authenticated_at": "2025-07-25T03:39:45Z"
+    },
+    "supabase_session": {
+      "user_id": "9e6b5eed-a289-4cea-b6d9-5106ff0bc719",
+      "email": "muaadhzaheem130@gmail.com",
+      "email_confirmed_at": "2025-07-25T02:54:29.943491Z",
+      "last_sign_in_at": "2025-07-25T02:54:29.946756Z",
+      "created_at": "2025-07-25T02:54:28.529148Z",
+      "updated_at": "2025-07-25T02:54:29.96391Z",
+      "provider": "lovable",
+      "session_id": "a0f30333e-bdc8-4c89-8918-97e3effb7c5e",
+      "expires_at": 1753415669,
+      "is_anonymous": false
+    }
+  },
+
+  "study_tracker_sessions": {
+    "august_2025_session": {
+      "date": "8/6/2025",
+      "user_id": "7511031113679586834",
+      "session_last_update_time": 1754486547582,
+      "stay_duration": 594.05,
+      "session_count": 1,
+      "platform_details": {
+        "os": "windows",
+        "browser": "chrome",
+        "screen_resolution": 1024000
+      },
+      "analysis": {
+        "timestamp_conversion": "1754486547582 = August 6, 2025",
+        "session_duration_minutes": 9.9,
+        "session_type": "study_session"
+      }
+    },
+    "september_2025_session": {
+      "date": "9/4/2025",
+      "user_id": "7511031113679586834",
+      "session_last_update_time": 1756986211386,
+      "stay_duration": 474.54,
+      "session_count": 1,
+      "platform_details": {
+        "os": "windows",
+        "browser": "chrome",
+        "cpu_core_number": 5
+      },
+      "analysis": {
+        "timestamp_conversion": "1756986211386 = September 4, 2025",
+        "session_duration_minutes": 7.9,
+        "session_type": "study_session"
+      }
+    }
+  },
+
+  "dismissed_revisions": {
+    "extraction_source": "localStorage key: studyTrackerDismissedRevisions",
+    "revision_entries": [
+      {
+        "revision_id": "1753939391323-0",
+        "timestamp": 1753939391323,
+        "date_time": "2025-07-30T07:36:31.323Z",
+        "index": 0,
+        "status": "dismissed",
+        "type": "revision_reminder"
+      },
+      {
+        "revision_id": "1753939391323-1",
+        "timestamp": 1753939391323,
+        "date_time": "2025-07-30T07:36:31.323Z",
+        "index": 1,
+        "status": "dismissed",
+        "type": "revision_reminder"
+      },
+      {
+        "revision_id": "17538293813257-0",
+        "timestamp": 17538293813257,
+        "date_time": "2525-10-26T10:56:53.257Z",
+        "index": 0,
+        "status": "dismissed",
+        "type": "revision_reminder",
+        "note": "Unusually far future timestamp - may indicate data corruption or different format"
+      }
+    ],
+    "statistics": {
+      "total_dismissed_revisions": 3,
+      "unique_timestamps": 2,
+      "earliest_dismissal": "2025-07-30T07:36:31.323Z",
+      "latest_dismissal": "2525-10-26T10:56:53.257Z"
+    }
+  },
+
+  "last_activity_data": {
+    "date": "2025-07-26",
+    "recycle_day": false,
+    "maintenance_mode": false,
+    "maintenance_duration": "30 days",
+    "source": "Chemistry subject data extraction"
+  },
+
+  "calendar_related_data": {
+    "calendar_icon_data": {
+      "prefix": "tabler",
+      "lastModified": 1753247142,
+      "icon_name": "calendar-due",
+      "svg_content": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm12-4v4M8 3v4m-4 4h16\"/><path d=\"M11 16a1 1 0 1 0 2 0a1 1 0 1 0-2 0\"/></g>",
+      "dimensions": {
+        "width": 24,
+        "height": 24
+      }
+    },
+    "session_dismissals": {
+      "currentSessionNumber": 1,
+      "lastDismissedDate": "Sat Jul 12 2025 22:34:48 GMT+0530 (India Standard Time)"
+    }
+  },
+
+  "subjects_data_references": {
+    "chemistry": {
+      "subject_id": 226472,
+      "level": "AS",
+      "subject": "Chemistry",
+      "board": "Cambridge (CIE)",
+      "year": "2023",
+      "course": "AS Chemistry Cambridge (CIE)",
+      "content_ids": "AS_Chemistry_Cambridge_(CIE)",
+      "study_sessions_found": false,
+      "past_papers_found": false,
+      "chapters_identified": [
+        {"id": 32335, "name": "Atomic Structure"},
+        {"id": 35009, "name": "Chemical Bonding"},
+        {"id": 8258, "name": "States of Matter"},
+        {"id": 3319, "name": "Chemical Energetics"},
+        {"id": 611988170, "name": "Electrochemistry"}
+      ]
+    },
+    "physics": {
+      "subject_id": 56121509,
+      "study_sessions_references": "Multiple session references found in study-tracker application data",
+      "session_indicators": ["study", "session", "progress"],
+      "external_resources": ["physicsandmathstutor"],
+      "study_sessions_found": false,
+      "note": "Past papers and study sessions functionality exists but specific data fragmented"
+    },
+    "computer_science": {
+      "subject_id": 379,
+      "inferred_sessions": [
+        {
+          "type": "revision",
+          "content": "PHCS PAPER 2 revision",
+          "study_materials": "All important CS diagrams",
+          "exam_content": "Paper 1 and Paper 2 exam content"
+        }
+      ],
+      "study_sessions_found": false
+    },
+    "math": {
+      "study_sessions_found": false,
+      "past_papers_found": false,
+      "note": "No specific study sessions data found for Math subject in the extracted LevelDB content"
+    }
+  },
+
+  "browser_history_sessions": [
+    {
+      "title": "hist-CPS Test",
+      "url": "/",
+      "date": 1757337643146,
+      "visit": 1,
+      "date_analysis": {
+        "timestamp_conversion": "1757337643146 = September 8, 2025 approximately",
+        "type": "browser_visit"
+      }
+    }
+  ],
+
+  "technical_analysis": {
+    "extraction_challenges": [
+      "LevelDB data is binary encoded causing fragmented information",
+      "Complete JSON structures not cleanly extractable using strings utility",
+      "Study sessions data appears to be stored in complex binary format",
+      "Some data may be incomplete due to encoding issues",
+      "Binary LDB file format causes data fragmentation"
+    ],
+    "data_sources_found": [
+      "Stytch authentication sessions",
+      "Supabase user sessions",
+      "Study tracker dismissed revisions",
+      "Calendar icon and interface data",
+      "Browser session tracking data",
+      "Platform analytics sessions"
+    ],
+    "missing_data": [
+      "Complete studySessions arrays from subject objects",
+      "Detailed study session content and progress",
+      "Complete calendar integration data",
+      "Chapter-specific study session records",
+      "Time-based revision schedules"
+    ]
+  },
+
+  "recommendations": {
+    "data_recovery": [
+      "Use specialized LevelDB reading tools for complete data extraction",
+      "Check Firebase/Supabase cloud backups for complete study session data",
+      "External physics resources indicate active study materials may be available online",
+      "Subject completion data exists but may require database reconstruction"
+    ],
+    "user_insights": [
+      "User was actively using the study tracker in July-August 2025",
+      "Multiple authentication sessions suggest regular usage",
+      "Dismissed revision reminders indicate user engagement with the system",
+      "Platform analytics show Windows/Chrome usage pattern",
+      "Study sessions lasted approximately 7-10 minutes on average"
+    ]
+  },
+
+  "summary": {
+    "total_sessions_found": 4,
+    "date_range": "2025-07-25 to 2025-09-04",
+    "primary_user": "muaadhzaheem130@gmail.com",
+    "study_subjects": ["Chemistry", "Physics", "Computer Science", "Math"],
+    "session_types": ["authentication", "study_tracking", "revision_dismissals", "browser_activity"],
+    "data_completeness": "partial - binary extraction limitations prevent full recovery",
+    "most_recent_activity": "2025-07-26T03:21:37Z"
+  }
+}
