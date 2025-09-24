@@ -57,22 +57,12 @@ const StudyTracker = () => {
         setSubjects(userData.subjects);
         setDismissedRevisions(userData.dismissedRevisions);
 
-        // Initialize daily backup scheduler once when app loads (only if we have data)
+        // Create daily backup once when app loads (only if we have data)
         if (userData.subjects.length > 0 && !dailyBackupInitialized.current) {
           console.log('[APP] Initializing daily backup system...');
           dailyBackupInitialized.current = true;
 
-          // Only create immediately if within 60 minutes after 12:00 AM IST; otherwise rely on the scheduler
-          try {
-            const now = new Date();
-            const istNow = new Date(now.getTime() + (5.5 * 60 * 60 * 1000)); // shift to IST
-            const minutesSinceMidnightIST = (istNow.getUTCHours() * 60) + istNow.getUTCMinutes();
-            if (minutesSinceMidnightIST >= 0 && minutesSinceMidnightIST <= 60) {
-              await createDailyBackupIfNeeded(userData);
-            }
-          } catch (e) {
-            console.warn('[APP] Skipped immediate daily backup check due to error:', e);
-          }
+          await createDailyBackupIfNeeded(userData);
 
           // Schedule next daily backup at midnight IST
           scheduleNextDailyBackup(userData);
