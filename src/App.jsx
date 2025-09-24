@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check, X, GripVertical } from 'lucide-react';
+import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check, X, GripVertical, Database } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -19,6 +19,8 @@ import {
   CSS
 } from '@dnd-kit/utilities';
 import { saveSubjects, saveDismissedRevisions, loadUserData } from './services/firebaseService';
+import { createBackup } from './services/backupService';
+import BackupRestore from './components/BackupRestore';
 
 const StudyTracker = () => {
   const [subjects, setSubjects] = useState([]);
@@ -44,6 +46,7 @@ const StudyTracker = () => {
   const [dismissedRevisions, setDismissedRevisions] = useState(new Set());
   const [showDayEditModal, setShowDayEditModal] = useState(false);
   const [selectedDayData, setSelectedDayData] = useState(null);
+  const [showBackupRestore, setShowBackupRestore] = useState(false);
 
   // Load data from Firebase on component mount
   useEffect(() => {
@@ -93,18 +96,31 @@ const StudyTracker = () => {
   }, [dismissedRevisions]);
 
   // Helper function to dismiss current overdue warnings permanently
-  const dismissOverdueWarning = () => {
+  const dismissOverdueWarning = async () => {
     if (!selectedSubject) return;
-    
+
+    // Create backup before dismissing overdue warnings
+    try {
+      const userData = { subjects, dismissedRevisions };
+      await createBackup(userData, {
+        type: 'change',
+        action: 'dismiss-overdue',
+        subject: selectedSubject.name,
+        description: `Before dismissing overdue revision warnings for ${selectedSubject.name}`
+      });
+    } catch (error) {
+      console.error('Failed to create backup before dismissing overdue warnings:', error);
+    }
+
     // Get all currently overdue revisions and mark them as dismissed
     const currentOverdueRevisions = getOverdueRevisions();
     const newDismissedRevisions = new Set(dismissedRevisions);
-    
+
     currentOverdueRevisions.forEach(revision => {
       const revisionId = `${revision.sessionId}-${revision.revisionIndex}`;
       newDismissedRevisions.add(revisionId);
     });
-    
+
     setDismissedRevisions(newDismissedRevisions);
   };
 
@@ -147,8 +163,23 @@ const StudyTracker = () => {
   };
 
   // Add study session to calendar
-  const addStudySession = (chapterName, date) => {
+  const addStudySession = async (chapterName, date) => {
     if (!selectedSubject || !chapterName) return;
+
+    // Create backup before adding study session
+    try {
+      const userData = { subjects, dismissedRevisions };
+      await createBackup(userData, {
+        type: 'change',
+        action: 'add-study-session',
+        target: chapterName,
+        subject: selectedSubject.name,
+        date: date,
+        description: `Before adding study session: ${chapterName} on ${date} for ${selectedSubject.name}`
+      });
+    } catch (error) {
+      console.error('Failed to create backup before adding study session:', error);
+    }
 
     const studySession = {
       id: Date.now(),
@@ -158,10 +189,10 @@ const StudyTracker = () => {
       lastRevisionCompleted: -1 // Track which revision cycle we're on
     };
 
-    const updatedSubjects = subjects.map(subject => 
-      subject.id === selectedSubject.id 
-        ? { 
-            ...subject, 
+    const updatedSubjects = subjects.map(subject =>
+      subject.id === selectedSubject.id
+        ? {
+            ...subject,
             studySessions: [...(subject.studySessions || []), studySession]
           }
         : subject
@@ -190,13 +221,32 @@ const StudyTracker = () => {
   };
 
   // Mark revision as completed
-  const toggleRevisionComplete = (sessionId, revisionIndex) => {
+  const toggleRevisionComplete = async (sessionId, revisionIndex) => {
     // First, find the current session to check its state
     const currentSession = selectedSubject.studySessions.find(s => s.id === sessionId);
-    const isCompleting = currentSession && !currentSession.revisions[revisionIndex].completed;
-    
-    const updatedSubjects = subjects.map(subject => 
-      subject.id === selectedSubject.id 
+    if (!currentSession) return;
+
+    const isCompleting = !currentSession.revisions[revisionIndex].completed;
+    const revision = currentSession.revisions[revisionIndex];
+
+    // Create backup before toggling revision completion
+    try {
+      const userData = { subjects, dismissedRevisions };
+      const action = isCompleting ? 'complete-revision' : 'reset-revision';
+      await createBackup(userData, {
+        type: 'change',
+        action: action,
+        target: currentSession.chapterName,
+        subject: selectedSubject.name,
+        cycle: revision.cycle,
+        description: `Before ${isCompleting ? 'completing' : 'resetting'} revision: ${currentSession.chapterName} - ${revision.cycle} for ${selectedSubject.name}`
+      });
+    } catch (error) {
+      console.error('Failed to create backup before toggling revision completion:', error);
+    }
+
+    const updatedSubjects = subjects.map(subject =>
+      subject.id === selectedSubject.id
         ? {
             ...subject,
             studySessions: subject.studySessions.map(session =>
@@ -217,7 +267,7 @@ const StudyTracker = () => {
     );
 
     setSubjects(updatedSubjects);
-    
+
     const updatedSelectedSubject = {
       ...selectedSubject,
       studySessions: selectedSubject.studySessions.map(session =>
@@ -234,7 +284,7 @@ const StudyTracker = () => {
           : session
       )
     };
-    
+
     setSelectedSubject(updatedSelectedSubject);
 
     // If completing a revision, remove it from dismissed revisions
@@ -251,14 +301,14 @@ const StudyTracker = () => {
       const lastRevisionDate = new Date(currentSession.revisions[revisionIndex].date);
       const maintenanceDate = new Date(lastRevisionDate);
       maintenanceDate.setDate(maintenanceDate.getDate() + 30);
-      
+
       const newRevision = {
         id: `rev-${currentSession.revisions.length}`,
         date: maintenanceDate.toISOString().split('T')[0],
         cycle: 'Maintenance (30 days)',
         completed: false
       };
-      
+
       // Update again with the new maintenance revision
       const finalUpdatedSubjects = subjects.map(subject => {
         if (subject.id === selectedSubject.id) {
@@ -277,9 +327,9 @@ const StudyTracker = () => {
         }
         return subject;
       });
-      
+
       setSubjects(finalUpdatedSubjects);
-      
+
       // Update selected subject with new maintenance revision
       const finalSelectedSubject = finalUpdatedSubjects.find(s => s.id === selectedSubject.id);
       setSelectedSubject(finalSelectedSubject);
@@ -337,11 +387,29 @@ const StudyTracker = () => {
   };
 
   // Delete study session
-  const deleteStudySession = (sessionId) => {
-    const updatedSubjects = subjects.map(subject => 
-      subject.id === selectedSubject.id 
-        ? { 
-            ...subject, 
+  const deleteStudySession = async (sessionId) => {
+    const sessionToDelete = selectedSubject.studySessions?.find(s => s.id === sessionId);
+    if (!sessionToDelete) return;
+
+    // Create backup before deleting study session
+    try {
+      const userData = { subjects, dismissedRevisions };
+      await createBackup(userData, {
+        type: 'change',
+        action: 'delete-study-session',
+        target: sessionToDelete.chapterName,
+        subject: selectedSubject.name,
+        date: sessionToDelete.studyDate,
+        description: `Before deleting study session: ${sessionToDelete.chapterName} on ${sessionToDelete.studyDate} for ${selectedSubject.name}`
+      });
+    } catch (error) {
+      console.error('Failed to create backup before deleting study session:', error);
+    }
+
+    const updatedSubjects = subjects.map(subject =>
+      subject.id === selectedSubject.id
+        ? {
+            ...subject,
             studySessions: subject.studySessions.filter(session => session.id !== sessionId)
           }
         : subject
@@ -464,8 +532,21 @@ const StudyTracker = () => {
     );
   };
 
-  const addSubject = () => {
+  const addSubject = async () => {
     if (newSubjectName.trim()) {
+      // Create backup before adding subject
+      try {
+        const userData = { subjects, dismissedRevisions };
+        await createBackup(userData, {
+          type: 'change',
+          action: 'add-subject',
+          target: newSubjectName.trim(),
+          description: `Before adding subject: ${newSubjectName.trim()}`
+        });
+      } catch (error) {
+        console.error('Failed to create backup before adding subject:', error);
+      }
+
       const newSubject = {
         id: Date.now(),
         name: newSubjectName.trim(),
@@ -479,7 +560,23 @@ const StudyTracker = () => {
     }
   };
 
-  const deleteSubject = (subjectId) => {
+  const deleteSubject = async (subjectId) => {
+    const subjectToDelete = subjects.find(s => s.id === subjectId);
+    if (!subjectToDelete) return;
+
+    // Create backup before deleting subject
+    try {
+      const userData = { subjects, dismissedRevisions };
+      await createBackup(userData, {
+        type: 'change',
+        action: 'delete-subject',
+        target: subjectToDelete.name,
+        description: `Before deleting subject: ${subjectToDelete.name}`
+      });
+    } catch (error) {
+      console.error('Failed to create backup before deleting subject:', error);
+    }
+
     setSubjects(subjects.filter(s => s.id !== subjectId));
     if (selectedSubject && selectedSubject.id === subjectId) {
       setCurrentView('subjects');
@@ -487,83 +584,145 @@ const StudyTracker = () => {
     }
   };
 
-  const addChapter = () => {
+  const addChapter = async () => {
     if (newChapterName.trim() && selectedSubject) {
+      // Create backup before adding chapter
+      try {
+        const userData = { subjects, dismissedRevisions };
+        await createBackup(userData, {
+          type: 'change',
+          action: 'add-chapter',
+          target: newChapterName.trim(),
+          subject: selectedSubject.name,
+          description: `Before adding chapter: ${newChapterName.trim()} to ${selectedSubject.name}`
+        });
+      } catch (error) {
+        console.error('Failed to create backup before adding chapter:', error);
+      }
+
       const newChapter = {
         id: Date.now(),
         name: newChapterName.trim(),
         topicalsCompleted: false
       };
-      
-      setSubjects(subjects.map(subject => 
-        subject.id === selectedSubject.id 
+
+      setSubjects(subjects.map(subject =>
+        subject.id === selectedSubject.id
           ? { ...subject, chapters: [...subject.chapters, newChapter] }
           : subject
       ));
-      
+
       setSelectedSubject({
         ...selectedSubject,
         chapters: [...selectedSubject.chapters, newChapter]
       });
-      
+
       setNewChapterName('');
       setShowAddChapter(false);
     }
   };
 
-  const toggleChapterCompletion = (chapterId) => {
-    const updatedSubjects = subjects.map(subject => 
-      subject.id === selectedSubject.id 
+  const toggleChapterCompletion = async (chapterId) => {
+    const chapterToToggle = selectedSubject.chapters.find(c => c.id === chapterId);
+    if (!chapterToToggle) return;
+
+    // Create backup before toggling completion
+    try {
+      const userData = { subjects, dismissedRevisions };
+      const action = chapterToToggle.topicalsCompleted ? 'incomplete-chapter' : 'complete-chapter';
+      await createBackup(userData, {
+        type: 'change',
+        action: action,
+        target: chapterToToggle.name,
+        subject: selectedSubject.name,
+        description: `Before ${chapterToToggle.topicalsCompleted ? 'marking incomplete' : 'completing'}: ${chapterToToggle.name} in ${selectedSubject.name}`
+      });
+    } catch (error) {
+      console.error('Failed to create backup before toggling chapter completion:', error);
+    }
+
+    const updatedSubjects = subjects.map(subject =>
+      subject.id === selectedSubject.id
         ? {
             ...subject,
             chapters: subject.chapters.map(chapter =>
-              chapter.id === chapterId 
+              chapter.id === chapterId
                 ? { ...chapter, topicalsCompleted: !chapter.topicalsCompleted }
                 : chapter
             )
           }
         : subject
     );
-    
+
     setSubjects(updatedSubjects);
     setSelectedSubject({
       ...selectedSubject,
       chapters: selectedSubject.chapters.map(chapter =>
-        chapter.id === chapterId 
+        chapter.id === chapterId
           ? { ...chapter, topicalsCompleted: !chapter.topicalsCompleted }
           : chapter
       )
     });
   };
 
-  const deleteChapter = (chapterId) => {
-    setSubjects(subjects.map(subject => 
-      subject.id === selectedSubject.id 
+  const deleteChapter = async (chapterId) => {
+    const chapterToDelete = selectedSubject.chapters.find(c => c.id === chapterId);
+    if (!chapterToDelete) return;
+
+    // Create backup before deleting chapter
+    try {
+      const userData = { subjects, dismissedRevisions };
+      await createBackup(userData, {
+        type: 'change',
+        action: 'delete-chapter',
+        target: chapterToDelete.name,
+        subject: selectedSubject.name,
+        description: `Before deleting chapter: ${chapterToDelete.name} from ${selectedSubject.name}`
+      });
+    } catch (error) {
+      console.error('Failed to create backup before deleting chapter:', error);
+    }
+
+    setSubjects(subjects.map(subject =>
+      subject.id === selectedSubject.id
         ? { ...subject, chapters: subject.chapters.filter(c => c.id !== chapterId) }
         : subject
     ));
-    
+
     setSelectedSubject({
       ...selectedSubject,
       chapters: selectedSubject.chapters.filter(c => c.id !== chapterId)
     });
   };
 
-  const handleDragEnd = (event) => {
+  const handleDragEnd = async (event) => {
     const { active, over } = event;
 
     if (active.id !== over.id) {
+      // Create backup before reordering chapters
+      try {
+        const userData = { subjects, dismissedRevisions };
+        await createBackup(userData, {
+          type: 'change',
+          action: 'reorder-chapters',
+          subject: selectedSubject.name,
+          description: `Before reordering chapters in ${selectedSubject.name}`
+        });
+      } catch (error) {
+        console.error('Failed to create backup before reordering chapters:', error);
+      }
+
       const oldIndex = selectedSubject.chapters.findIndex(chapter => chapter.id === active.id);
       const newIndex = selectedSubject.chapters.findIndex(chapter => chapter.id === over.id);
-      
+
       const newChapters = arrayMove(selectedSubject.chapters, oldIndex, newIndex);
-      
-      const updatedSubjects = subjects.map(subject => 
-        subject.id === selectedSubject.id 
+
+      const updatedSubjects = subjects.map(subject =>
+        subject.id === selectedSubject.id
           ? { ...subject, chapters: newChapters }
           : subject
       );
-      
+
       setSubjects(updatedSubjects);
       setSelectedSubject({
         ...selectedSubject,
@@ -579,8 +738,26 @@ const StudyTracker = () => {
     })
   );
    
-  const addPastPaper = () => {
+  const addPastPaper = async () => {
     if (selectedSubject && newPaper.score !== '') {
+      // Create backup before adding past paper
+      try {
+        const userData = { subjects, dismissedRevisions };
+        await createBackup(userData, {
+          type: 'change',
+          action: 'add-paper',
+          subject: selectedSubject.name,
+          paperInfo: {
+            session: newPaper.session,
+            year: parseInt(newPaper.year),
+            paperNumber: parseInt(newPaper.paperNumber)
+          },
+          description: `Before adding paper: ${newPaper.session} ${newPaper.year} Paper ${newPaper.paperNumber} for ${selectedSubject.name}`
+        });
+      } catch (error) {
+        console.error('Failed to create backup before adding past paper:', error);
+      }
+
       const paper = {
         id: Date.now(),
         session: newPaper.session,
@@ -589,18 +766,18 @@ const StudyTracker = () => {
         score: newPaper.score,
         hardChapters: newPaper.hardChapters
       };
-      
-      setSubjects(subjects.map(subject => 
-        subject.id === selectedSubject.id 
+
+      setSubjects(subjects.map(subject =>
+        subject.id === selectedSubject.id
           ? { ...subject, pastPapers: [...subject.pastPapers, paper] }
           : subject
       ));
-      
+
       setSelectedSubject({
         ...selectedSubject,
         pastPapers: [...selectedSubject.pastPapers, paper]
       });
-      
+
       setNewPaper({
         session: 'MJ',
         year: new Date().getFullYear(),
@@ -612,13 +789,34 @@ const StudyTracker = () => {
     }
   };
 
-  const deletePastPaper = (paperId) => {
-    setSubjects(subjects.map(subject => 
-      subject.id === selectedSubject.id 
+  const deletePastPaper = async (paperId) => {
+    const paperToDelete = selectedSubject.pastPapers?.find(p => p.id === paperId);
+    if (!paperToDelete) return;
+
+    // Create backup before deleting past paper
+    try {
+      const userData = { subjects, dismissedRevisions };
+      await createBackup(userData, {
+        type: 'change',
+        action: 'delete-paper',
+        subject: selectedSubject.name,
+        paperInfo: {
+          session: paperToDelete.session,
+          year: paperToDelete.year,
+          paperNumber: paperToDelete.paperNumber
+        },
+        description: `Before deleting paper: ${paperToDelete.session} ${paperToDelete.year} Paper ${paperToDelete.paperNumber} for ${selectedSubject.name}`
+      });
+    } catch (error) {
+      console.error('Failed to create backup before deleting past paper:', error);
+    }
+
+    setSubjects(subjects.map(subject =>
+      subject.id === selectedSubject.id
         ? { ...subject, pastPapers: subject.pastPapers.filter(p => p.id !== paperId) }
         : subject
     ));
-    
+
     setSelectedSubject({
       ...selectedSubject,
       pastPapers: selectedSubject.pastPapers.filter(p => p.id !== paperId)
@@ -660,6 +858,27 @@ const StudyTracker = () => {
     };
   };
 
+  // Handle data restoration from backup
+  const handleDataRestored = (restoredData) => {
+    if (restoredData.subjects) {
+      setSubjects(restoredData.subjects);
+    }
+    if (restoredData.dismissedRevisions) {
+      setDismissedRevisions(new Set(restoredData.dismissedRevisions));
+    }
+    // If we're currently viewing a subject that might have changed, refresh the view
+    if (selectedSubject) {
+      const updatedSubject = restoredData.subjects?.find(s => s.id === selectedSubject.id);
+      if (updatedSubject) {
+        setSelectedSubject(updatedSubject);
+      } else {
+        // Subject was deleted in the restored data
+        setCurrentView('subjects');
+        setSelectedSubject(null);
+      }
+    }
+  };
+
   if (currentView === 'subjects') {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -667,6 +886,15 @@ const StudyTracker = () => {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-blue-600 mb-2">Study Tracker</h1>
             <p className="text-gray-600">Track your progress across all subjects</p>
+            <div className="mt-4">
+              <button
+                onClick={() => setShowBackupRestore(true)}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2 mx-auto"
+              >
+                <Database size={16} />
+                Backup & Restore
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -784,6 +1012,15 @@ const StudyTracker = () => {
               </div>
             </div>
           )}
+
+          {/* Backup & Restore Modal */}
+          {showBackupRestore && (
+            <BackupRestore
+              userData={{ subjects, dismissedRevisions }}
+              onDataRestored={handleDataRestored}
+              onClose={() => setShowBackupRestore(false)}
+            />
+          )}
         </div>
       </div>
     );
@@ -793,13 +1030,24 @@ const StudyTracker = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
-          <button
-            onClick={() => setCurrentView('subjects')}
-            className="text-blue-500 hover:text-blue-700 mb-2 flex items-center"
-          >
-            ← Back to Subjects
-          </button>
-          <h1 className="text-3xl font-bold text-blue-600">{selectedSubject.name}</h1>
+          <div className="flex justify-between items-center">
+            <div>
+              <button
+                onClick={() => setCurrentView('subjects')}
+                className="text-blue-500 hover:text-blue-700 mb-2 flex items-center"
+              >
+                ← Back to Subjects
+              </button>
+              <h1 className="text-3xl font-bold text-blue-600">{selectedSubject.name}</h1>
+            </div>
+            <button
+              onClick={() => setShowBackupRestore(true)}
+              className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+            >
+              <Database size={16} />
+              Backup & Restore
+            </button>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -1419,6 +1667,15 @@ const StudyTracker = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Backup & Restore Modal */}
+        {showBackupRestore && (
+          <BackupRestore
+            userData={{ subjects, dismissedRevisions }}
+            onDataRestored={handleDataRestored}
+            onClose={() => setShowBackupRestore(false)}
+          />
         )}
       </div>
     </div>
