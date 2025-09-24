@@ -100,7 +100,9 @@ const generateBackupName = (context, timestamp) => {
   const timeStr = date.toTimeString().slice(0, 5).replace(':', ''); // HHMM
 
   if (context.type === 'daily') {
-    return `Daily snapshot ${dateStr}`;
+    // For daily backups, use the date from the description which is in IST
+    const istDate = context.description ? context.description.replace('Daily backup for ', '') : dateStr;
+    return `Daily snapshot ${istDate}`;
   }
 
   if (context.type === 'safety') {
@@ -373,24 +375,38 @@ export const cleanupOldBackups = async (keepCount = 10) => {
 let dailyBackupInProgress = null;
 
 /**
- * Create an automatic daily backup if one doesn't exist for today
+ * Get current date in IST timezone
+ * @returns {string} Date string in YYYY-MM-DD format for IST
+ */
+const getTodayInIST = () => {
+  const now = new Date();
+  // IST is UTC+5:30
+  const istTime = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+  return istTime.toISOString().split('T')[0];
+};
+
+/**
+ * Create an automatic daily backup if one doesn't exist for today (IST)
  * @param {Object} userData - Current user data
  * @returns {Promise<string|null>} Backup ID if created, null if already exists
  */
 export const createDailyBackupIfNeeded = async (userData) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
+    const todayIST = getTodayInIST();
 
     // If a daily backup is already in progress for today, wait for it to complete
-    if (dailyBackupInProgress && dailyBackupInProgress.date === today) {
+    if (dailyBackupInProgress && dailyBackupInProgress.date === todayIST) {
       return await dailyBackupInProgress.promise;
     }
 
-    const recentBackups = await getBackupHistory(10); // Check more backups to be sure
+    const recentBackups = await getBackupHistory(30); // Check more backups to find today's
 
-    // Check if we already have a daily backup for today
+    // Check if we already have a daily backup for today (IST)
+    // Look for backup name that contains today's date, not creation timestamp
     const todayBackup = recentBackups.find(backup =>
-      backup.timestamp.startsWith(today) && backup.backupType === 'daily'
+      backup.backupType === 'daily' &&
+      backup.name &&
+      backup.name.includes(`Daily snapshot ${todayIST}`)
     );
 
     if (todayBackup) {
@@ -401,17 +417,17 @@ export const createDailyBackupIfNeeded = async (userData) => {
     const backupPromise = createBackup(userData, {
       type: 'daily',
       action: 'daily-snapshot',
-      description: `Daily backup for ${today}`
+      description: `Daily backup for ${todayIST}`
     }).finally(() => {
       // Clear the in-progress tracker when done
-      if (dailyBackupInProgress && dailyBackupInProgress.date === today) {
+      if (dailyBackupInProgress && dailyBackupInProgress.date === todayIST) {
         dailyBackupInProgress = null;
       }
     });
 
     // Track this backup creation to prevent concurrent duplicates
     dailyBackupInProgress = {
-      date: today,
+      date: todayIST,
       promise: backupPromise
     };
 
@@ -513,4 +529,48 @@ export const importFromJson = async (jsonString, saveSubjectsCallback, saveDismi
     console.error('Error importing from JSON:', error);
     throw error;
   }
+};
+
+/**
+ * Schedule the next daily backup to occur at midnight IST
+ * @param {Object} userData - Current user data
+ * @returns {void}
+ */
+export const scheduleNextDailyBackup = (userData) => {
+  // Clear any existing timer
+  if (window.dailyBackupTimer) {
+    clearTimeout(window.dailyBackupTimer);
+  }
+
+  const now = new Date();
+  // Calculate next midnight in IST (UTC+5:30)
+  const nextMidnightIST = new Date();
+  nextMidnightIST.setUTCHours(18, 30, 0, 0); // 18:30 UTC = 12:00 AM IST next day
+
+  // If it's already past 6:30 PM UTC today, schedule for tomorrow
+  if (now.getTime() > nextMidnightIST.getTime()) {
+    nextMidnightIST.setUTCDate(nextMidnightIST.getUTCDate() + 1);
+  }
+
+  const msUntilMidnight = nextMidnightIST.getTime() - now.getTime();
+
+  console.log(`Next daily backup scheduled for: ${nextMidnightIST.toISOString()} (in ${Math.round(msUntilMidnight / 1000 / 60)} minutes)`);
+
+  window.dailyBackupTimer = setTimeout(async () => {
+    try {
+      // Get fresh user data and create daily backup
+      const currentUserData = await getCurrentUserData();
+      if (currentUserData.subjects.length > 0) {
+        await createDailyBackupIfNeeded(currentUserData);
+        console.log('Automatic daily backup created at midnight IST');
+
+        // Schedule the next day's backup
+        scheduleNextDailyBackup(currentUserData);
+      }
+    } catch (error) {
+      console.error('Error creating scheduled daily backup:', error);
+      // Try again in 1 hour if there was an error
+      setTimeout(() => scheduleNextDailyBackup(userData), 60 * 60 * 1000);
+    }
+  }, msUntilMidnight);
 };

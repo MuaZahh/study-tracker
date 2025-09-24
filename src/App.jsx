@@ -19,7 +19,7 @@ import {
   CSS
 } from '@dnd-kit/utilities';
 import { saveSubjects, saveDismissedRevisions, loadUserData } from './services/firebaseService';
-import { createBackup, createDailyBackupIfNeeded } from './services/backupService';
+import { createBackup, createDailyBackupIfNeeded, scheduleNextDailyBackup } from './services/backupService';
 import BackupRestore from './components/BackupRestore';
 
 const StudyTracker = () => {
@@ -59,6 +59,9 @@ const StudyTracker = () => {
         // Create daily backup once when app loads (only if we have data)
         if (userData.subjects.length > 0) {
           await createDailyBackupIfNeeded(userData);
+
+          // Schedule next daily backup at midnight IST
+          scheduleNextDailyBackup(userData);
         }
       } catch (error) {
         console.error('Failed to load data from Firebase:', error);
