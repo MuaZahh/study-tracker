@@ -2,7 +2,6 @@ import {
   doc,
   setDoc,
   getDoc,
-  onSnapshot,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -61,7 +60,7 @@ export const saveDismissedRevisions = async (dismissedRevisions) => {
         dismissedRevisions: new Set(currentData.dismissedRevisions || [])
       };
 
-      // Daily backups are now handled by individual operations, no need for auto-backup here
+      // Manual backups are now handled by individual operations, no need for auto-backup here
     }
 
     await setDoc(userDocRef, {
@@ -100,24 +99,3 @@ export const loadUserData = async () => {
   }
 };
 
-// Set up real-time listener for user data
-export const subscribeToUserData = (callback) => {
-  const userDocRef = getUserDocRef();
-
-  return onSnapshot(userDocRef, (doc) => {
-    if (doc.exists()) {
-      const data = doc.data();
-      callback({
-        subjects: data.subjects || [],
-        dismissedRevisions: new Set(data.dismissedRevisions || [])
-      });
-    } else {
-      callback({
-        subjects: [],
-        dismissedRevisions: new Set()
-      });
-    }
-  }, (error) => {
-    console.error('Error listening to user data:', error);
-  });
-};
