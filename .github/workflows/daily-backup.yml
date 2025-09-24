@@ -1,0 +1,33 @@
+name: Daily Backup (IST)
+
+on:
+  schedule:
+    - cron: '30 18 * * *' # 18:30 UTC = 00:00 IST
+  workflow_dispatch: {}
+
+jobs:
+  daily-backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          cd functions || true
+          [ -f package.json ] && npm ci --no-audit --no-fund || true
+
+      - name: Run daily backup script
+        env:
+          GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        run: |
+          node --version
+          node scripts/daily-backup.mjs
+
+
