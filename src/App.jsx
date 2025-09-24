@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, BookOpen, CheckCircle, Circle, Edit2, Trash2, Award, Calendar, FileText, AlertCircle, Check, X, GripVertical, Database } from 'lucide-react';
 import {
   DndContext,
@@ -25,6 +25,7 @@ import BackupRestore from './components/BackupRestore';
 const StudyTracker = () => {
   const [subjects, setSubjects] = useState([]);
   const [currentView, setCurrentView] = useState('subjects');
+  const dailyBackupInitialized = useRef(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [showAddChapter, setShowAddChapter] = useState(false);
@@ -57,7 +58,10 @@ const StudyTracker = () => {
         setDismissedRevisions(userData.dismissedRevisions);
 
         // Create daily backup once when app loads (only if we have data)
-        if (userData.subjects.length > 0) {
+        if (userData.subjects.length > 0 && !dailyBackupInitialized.current) {
+          console.log('[APP] Initializing daily backup system...');
+          dailyBackupInitialized.current = true;
+
           await createDailyBackupIfNeeded(userData);
 
           // Schedule next daily backup at midnight IST

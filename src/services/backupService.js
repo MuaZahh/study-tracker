@@ -393,13 +393,20 @@ const getTodayInIST = () => {
 export const createDailyBackupIfNeeded = async (userData) => {
   try {
     const todayIST = getTodayInIST();
+    console.log(`[DAILY BACKUP] Checking if daily backup needed for ${todayIST}`);
 
     // If a daily backup is already in progress for today, wait for it to complete
     if (dailyBackupInProgress && dailyBackupInProgress.date === todayIST) {
+      console.log(`[DAILY BACKUP] Already in progress for ${todayIST}, waiting...`);
       return await dailyBackupInProgress.promise;
     }
 
-    const recentBackups = await getBackupHistory(30); // Check more backups to find today's
+    const recentBackups = await getBackupHistory(50); // Check more backups to find today's
+    console.log(`[DAILY BACKUP] Found ${recentBackups.length} recent backups`);
+
+    // Log all daily backups for debugging
+    const dailyBackups = recentBackups.filter(backup => backup.backupType === 'daily');
+    console.log('[DAILY BACKUP] Existing daily backups:', dailyBackups.map(b => ({ name: b.name, type: b.backupType, timestamp: b.timestamp })));
 
     // Check if we already have a daily backup for today (IST)
     // Look for backup name that contains today's date, not creation timestamp
@@ -410,18 +417,25 @@ export const createDailyBackupIfNeeded = async (userData) => {
     );
 
     if (todayBackup) {
+      console.log(`[DAILY BACKUP] Found existing backup for ${todayIST}:`, todayBackup.name);
       return null; // Daily backup already exists for today
     }
+
+    console.log(`[DAILY BACKUP] No existing backup found for ${todayIST}, creating new one`);
 
     // Create a promise to track the daily backup creation
     const backupPromise = createBackup(userData, {
       type: 'daily',
       action: 'daily-snapshot',
       description: `Daily backup for ${todayIST}`
+    }).then((backupId) => {
+      console.log(`[DAILY BACKUP] Successfully created daily backup: ${backupId}`);
+      return backupId;
     }).finally(() => {
       // Clear the in-progress tracker when done
       if (dailyBackupInProgress && dailyBackupInProgress.date === todayIST) {
         dailyBackupInProgress = null;
+        console.log(`[DAILY BACKUP] Cleared in-progress tracker for ${todayIST}`);
       }
     });
 
@@ -430,10 +444,11 @@ export const createDailyBackupIfNeeded = async (userData) => {
       date: todayIST,
       promise: backupPromise
     };
+    console.log(`[DAILY BACKUP] Set in-progress tracker for ${todayIST}`);
 
     return await backupPromise;
   } catch (error) {
-    console.error('Error creating daily backup:', error);
+    console.error('[DAILY BACKUP] Error creating daily backup:', error);
     // Clear the in-progress tracker on error
     if (dailyBackupInProgress) {
       dailyBackupInProgress = null;
