@@ -6,7 +6,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { createBackup, createDailyBackupIfNeeded } from './backupService';
+import { createBackup } from './backupService';
 
 // Collection names
 const COLLECTIONS = {
@@ -32,9 +32,6 @@ export const saveSubjects = async (subjects) => {
         subjects: currentData.subjects || [],
         dismissedRevisions: new Set(currentData.dismissedRevisions || [])
       };
-
-      // Create daily backup if needed
-      await createDailyBackupIfNeeded(userData);
 
       // Manual backups are now handled by individual operations, no need for auto-backup here
     }
@@ -64,8 +61,7 @@ export const saveDismissedRevisions = async (dismissedRevisions) => {
         dismissedRevisions: new Set(currentData.dismissedRevisions || [])
       };
 
-      // Create daily backup if needed
-      await createDailyBackupIfNeeded(userData);
+      // Daily backups are now handled by individual operations, no need for auto-backup here
     }
 
     await setDoc(userDocRef, {
