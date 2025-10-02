@@ -1479,6 +1479,7 @@ const StudyTracker = () => {
                   >
                     <option value="MJ">MJ (May/June)</option>
                     <option value="ON">ON (Oct/Nov)</option>
+                    <option value="FM">FM (Feb/March)</option>
                   </select>
                 </div>
 
@@ -1497,12 +1498,11 @@ const StudyTracker = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Paper Number</label>
                   <input
-                    type="number"
+                    type="text"
                     value={newPaper.paperNumber}
                     onChange={(e) => setNewPaper({...newPaper, paperNumber: e.target.value})}
                     className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    min="1"
-                    max="10"
+                    placeholder="e.g., 1, 2, 12, 42"
                   />
                 </div>
 
