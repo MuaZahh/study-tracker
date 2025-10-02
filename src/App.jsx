@@ -1479,7 +1479,7 @@ const StudyTracker = () => {
                   >
                     <option value="MJ">MJ (May/June)</option>
                     <option value="ON">ON (Oct/Nov)</option>
-                    <option value="FM">FM (Feb/March)</option>
+                    <option value="JN">JN (January)</option>
                   </select>
                 </div>
 
