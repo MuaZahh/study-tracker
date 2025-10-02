@@ -763,7 +763,7 @@ const StudyTracker = () => {
         id: Date.now(),
         session: newPaper.session,
         year: parseInt(newPaper.year),
-        paperNumber: parseInt(newPaper.paperNumber),
+        paperNumber: newPaper.paperNumber,
         score: newPaper.score,
         hardChapters: newPaper.hardChapters
       };
